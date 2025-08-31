@@ -1,0 +1,13 @@
+{
+  "name": "nguyen-thanh-tai-blog",
+  "version": "1.0.0",
+  "description": "Combined frontend and backend for Nguyen Thanh Tai blog",
+  "scripts": {
+    "start-backend": "python app.py",
+    "build-frontend": "cd ../frontend && npm run build && cp -r build/static/* ../backend/static/ && cp build/index.html ../backend/templates/",
+    "dev": "python app.py"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

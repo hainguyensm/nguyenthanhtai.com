@@ -1,0 +1,108 @@
+.rich-text-editor {
+  margin-bottom: 20px;
+}
+
+.rich-text-editor .quill {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rich-text-editor .ql-toolbar {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px 8px 0 0;
+  background: #f8f9fa;
+  padding: 8px;
+}
+
+.rich-text-editor .ql-container {
+  border: 1px solid #e0e0e0;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  font-size: 16px;
+  min-height: 300px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.rich-text-editor .ql-editor {
+  min-height: 300px;
+  padding: 15px;
+  line-height: 1.6;
+}
+
+.rich-text-editor .ql-editor h1 {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+.rich-text-editor .ql-editor h2 {
+  font-size: 1.5em;
+  margin: 0.75em 0;
+}
+
+.rich-text-editor .ql-editor h3 {
+  font-size: 1.17em;
+  margin: 0.83em 0;
+}
+
+.rich-text-editor .ql-editor p {
+  margin: 1em 0;
+}
+
+.rich-text-editor .ql-editor pre {
+  background: #f4f4f4;
+  border-radius: 4px;
+  padding: 10px;
+  overflow-x: auto;
+}
+
+.rich-text-editor .ql-editor blockquote {
+  border-left: 4px solid #4CAF50;
+  padding-left: 16px;
+  margin: 1em 0;
+  color: #666;
+}
+
+.rich-text-editor .ql-editor img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1em auto;
+}
+
+.rich-text-editor .ql-editor a {
+  color: #4CAF50;
+  text-decoration: none;
+}
+
+.rich-text-editor .ql-editor a:hover {
+  text-decoration: underline;
+}
+
+.rich-text-editor .ql-snow .ql-stroke {
+  stroke: #444;
+}
+
+.rich-text-editor .ql-snow .ql-fill {
+  fill: #444;
+}
+
+.rich-text-editor .ql-toolbar button:hover {
+  background: #e8f5e9;
+  border-radius: 4px;
+}
+
+.rich-text-editor .ql-toolbar button.ql-active {
+  background: #4CAF50;
+  color: white;
+  border-radius: 4px;
+}
+
+.rich-text-editor .ql-toolbar button.ql-active .ql-stroke {
+  stroke: white;
+}
+
+.rich-text-editor .ql-toolbar button.ql-active .ql-fill {
+  fill: white;
+}

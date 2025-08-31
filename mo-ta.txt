@@ -1,0 +1,5 @@
+create blog website for personal chuyên ngành công sinh học
+- support admin dashoard để tạo new blob
+- viết bằng python & reactjs
+- Sqllight database
+

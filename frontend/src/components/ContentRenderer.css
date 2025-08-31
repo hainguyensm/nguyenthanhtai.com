@@ -1,0 +1,151 @@
+.content-renderer {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #333;
+}
+
+.content-renderer h1 {
+  font-size: 2.5rem;
+  margin: 2rem 0 1rem;
+  color: #2c3e50;
+  border-bottom: 2px solid #4CAF50;
+  padding-bottom: 0.5rem;
+}
+
+.content-renderer h2 {
+  font-size: 2rem;
+  margin: 1.8rem 0 0.9rem;
+  color: #34495e;
+}
+
+.content-renderer h3 {
+  font-size: 1.6rem;
+  margin: 1.5rem 0 0.8rem;
+  color: #34495e;
+}
+
+.content-renderer h4 {
+  font-size: 1.3rem;
+  margin: 1.2rem 0 0.6rem;
+  color: #34495e;
+}
+
+.content-renderer p {
+  margin: 1.2rem 0;
+  text-align: justify;
+}
+
+.content-renderer ul,
+.content-renderer ol {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.content-renderer li {
+  margin: 0.5rem 0;
+}
+
+.content-renderer blockquote {
+  border-left: 4px solid #4CAF50;
+  padding-left: 1.5rem;
+  margin: 1.5rem 0;
+  color: #666;
+  font-style: italic;
+  background: #f9f9f9;
+  padding: 1rem 1.5rem;
+  border-radius: 4px;
+}
+
+.content-renderer pre {
+  background: #2c3e50;
+  color: #ecf0f1;
+  padding: 1.5rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  font-family: 'Courier New', monospace;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.content-renderer code {
+  background: #f4f4f4;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #e74c3c;
+}
+
+.content-renderer pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.content-renderer img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 2rem auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.content-renderer a {
+  color: #4CAF50;
+  text-decoration: none;
+  border-bottom: 1px dotted #4CAF50;
+  transition: all 0.3s ease;
+}
+
+.content-renderer a:hover {
+  color: #45a049;
+  border-bottom: 1px solid #45a049;
+}
+
+.content-renderer table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.content-renderer th,
+.content-renderer td {
+  padding: 0.75rem;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+.content-renderer th {
+  background: #4CAF50;
+  color: white;
+  font-weight: 600;
+}
+
+.content-renderer tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+.content-renderer hr {
+  border: none;
+  height: 1px;
+  background: #e0e0e0;
+  margin: 2rem 0;
+}
+
+.content-renderer sup,
+.content-renderer sub {
+  font-size: 0.75rem;
+}
+
+.content-renderer strong {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.content-renderer em {
+  font-style: italic;
+  color: #555;
+}
