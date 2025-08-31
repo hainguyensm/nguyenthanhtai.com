@@ -21,12 +21,14 @@ app = Flask(__name__, static_folder='static', static_url_path='')
 
 # Configuration
 DATABASE_URL = os.environ.get('DATABASE_URL')
+# Use absolute path for database to ensure it works regardless of working directory
+db_path = os.path.join(os.path.dirname(__file__), 'instance', 'cms.db')
 if DATABASE_URL:
     # Production database (SQLite - same as local)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/cms.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 else:
     # Development database (SQLite)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/cms.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-cms-secret-key-change-this-in-production')
