@@ -22,11 +22,11 @@ app = Flask(__name__, static_folder='static', static_url_path='')
 # Configuration
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
-    # Production database (PostgreSQL)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cms.db'
+    # Production database (SQLite - same as local)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/cms.db'
 else:
     # Development database (SQLite)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cms.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/cms.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-cms-secret-key-change-this-in-production')

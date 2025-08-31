@@ -55,6 +55,9 @@ venv.bak/
 *.sqlite
 *.sqlite3
 
+# Allow specific database files needed for deployment
+!cms-backend/instance/cms.db
+
 # Logs
 logs
 *.log
@@ -88,6 +91,10 @@ jspm_packages/
 
 # Flask instance folder
 instance/
+
+# Allow specific instance files needed for deployment
+!cms-backend/instance/
+!cms-backend/instance/cms.db
 
 # Claude settings
 .claude/settings.local.json
