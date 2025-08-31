@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ImageGallery from './ImageGallery';
+import api from '../api/api';
 import './ImageUpload.css';
 
 const ImageUpload = ({ onUpload, onError, buttonText = "Tải ảnh lên", accept = "image/*" }) => {
@@ -21,29 +22,56 @@ const ImageUpload = ({ onUpload, onError, buttonText = "Tải ảnh lên", accep
     }
 
     setUploading(true);
+    
+    // Check authentication status
+    const token = localStorage.getItem('token');
+    const username = localStorage.getItem('username');
+    console.log('Authentication status:', { hasToken: !!token, username });
+    
+    if (!token) {
+      onError && onError('Bạn cần đăng nhập để tải ảnh lên');
+      setUploading(false);
+      return;
+    }
+    
     try {
       const formData = new FormData();
       formData.append('image', file);
 
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/upload/image', {
-        method: 'POST',
+      console.log('Uploading image with token:', token.substring(0, 20) + '...');
+      
+      const response = await api.post('/upload/image', formData, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'multipart/form-data',
         },
-        body: formData
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Upload failed');
-      }
-
-      const data = await response.json();
+      const data = response.data;
+      console.log('Upload successful:', data);
       onUpload && onUpload(data.url, data.filename);
     } catch (error) {
       console.error('Upload error:', error);
-      onError && onError(error.message || 'Lỗi khi tải ảnh lên');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      let errorMessage = 'Lỗi khi tải ảnh lên';
+      if (error.response?.status === 401 || error.response?.status === 422) {
+        if (error.response?.data?.msg) {
+          // Clear invalid token from localStorage
+          localStorage.removeItem('token');
+          localStorage.removeItem('username');
+          errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+          
+          // Optionally redirect to login or refresh page
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      
+      onError && onError(errorMessage);
     } finally {
       setUploading(false);
     }

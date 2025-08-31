@@ -36,21 +36,24 @@ function Layout({ children, activeNavItem = '', className = '' }) {
             </div>
             
             <button 
-              className="mobile-menu-toggle"
+              className={`mobile-menu-toggle ${mobileMenuOpen ? 'active' : ''}`}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle navigation menu"
             >
-              ☰
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
             </button>
           </div>
 
           <nav className={`main-navigation ${mobileMenuOpen ? 'mobile-open' : ''}`}>
             <ul className="nav-menu">
-              <li><a href="/" className={`nav-link ${activeNavItem === 'home' ? 'active' : ''}`}>Trang chủ</a></li>
-              <li><a href="/about" className={`nav-link ${activeNavItem === 'about' ? 'active' : ''}`}>Giới thiệu</a></li>
-              <li><a href="/research" className={`nav-link ${activeNavItem === 'research' ? 'active' : ''}`}>Nghiên cứu</a></li>
-              <li><a href="/publications" className={`nav-link ${activeNavItem === 'publications' ? 'active' : ''}`}>Công bố</a></li>
-              <li><a href="/courses" className={`nav-link ${activeNavItem === 'courses' ? 'active' : ''}`}>Khóa học</a></li>
-              <li><a href="/contact" className={`nav-link ${activeNavItem === 'contact' ? 'active' : ''}`}>Liên hệ</a></li>
+              <li><a href="/" className={`nav-link ${activeNavItem === 'home' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Trang chủ</a></li>
+              <li><a href="/about" className={`nav-link ${activeNavItem === 'about' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Giới thiệu</a></li>
+              <li><a href="/research" className={`nav-link ${activeNavItem === 'research' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Nghiên cứu</a></li>
+              <li><a href="/publications" className={`nav-link ${activeNavItem === 'publications' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Công bố</a></li>
+              <li><a href="/courses" className={`nav-link ${activeNavItem === 'courses' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Khóa học</a></li>
+              <li><a href="/contact" className={`nav-link ${activeNavItem === 'contact' ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>Liên hệ</a></li>
               <li>
                 <button onClick={handleAdminClick} className="nav-admin-btn">
                   {isAdmin ? 'Admin Dashboard' : 'Đăng nhập'}

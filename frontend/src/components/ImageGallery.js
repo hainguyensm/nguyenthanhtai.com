@@ -17,6 +17,18 @@ const ImageGallery = ({ onImageSelect, onClose }) => {
       setImages(response.data.images);
     } catch (error) {
       console.error('Error fetching images:', error);
+      
+      // Handle authentication errors
+      if (error.response?.status === 401 || error.response?.status === 422) {
+        if (error.response?.data?.msg) {
+          // Clear invalid token from localStorage
+          localStorage.removeItem('token');
+          localStorage.removeItem('username');
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        }
+      }
     } finally {
       setLoading(false);
     }
