@@ -97,37 +97,39 @@ function HomePage() {
       </header>
 
       <div className="container">
-        {categories.length > 0 && (
-          <div className="category-filter">
-            <button
-              className={!selectedCategory ? 'active' : ''}
-              onClick={() => setSelectedCategory('')}
-            >
-              Tất cả
-            </button>
-            {categories.map((category) => (
+        <div className="u-wrapper">
+          {categories.length > 0 && (
+            <div className="category-filter">
               <button
-                key={category}
-                className={selectedCategory === category ? 'active' : ''}
-                onClick={() => setSelectedCategory(category)}
+                className={!selectedCategory ? 'active' : ''}
+                onClick={() => setSelectedCategory('')}
               >
-                {category}
+                Tất cả
               </button>
-            ))}
-          </div>
-        )}
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  className={selectedCategory === category ? 'active' : ''}
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          )}
 
-        {loading ? (
-          <div className="loading">Đang tải...</div>
-        ) : (
-          <div className="blog-grid">
-            {posts.length > 0 ? (
-              posts.map((post) => <BlogCard key={post.id} post={post} />)
-            ) : (
-              <p className="no-posts">Chưa có bài viết nào.</p>
-            )}
-          </div>
-        )}
+          {loading ? (
+            <div className="loading">Đang tải...</div>
+          ) : (
+            <div className="blog-grid">
+              {posts.length > 0 ? (
+                posts.map((post) => <BlogCard key={post.id} post={post} />)
+              ) : (
+                <p className="no-posts">Chưa có bài viết nào.</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Footer */}

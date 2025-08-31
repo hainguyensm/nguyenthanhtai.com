@@ -1,3 +1,16 @@
+/* Make blog post container match site-branding width constraints */
+.blog-post-page .container {
+  max-width: none;
+  width: 100%;
+}
+
+/* Match the u-wrapper constraints exactly like site-branding */
+.blog-post-page .container .u-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
 .blog-post {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 12px;
@@ -172,6 +185,10 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .blog-post-page .container .u-wrapper {
+    padding: 0 10px;
+  }
+  
   .blog-post {
     padding: 20px;
   }
@@ -191,6 +208,10 @@
 }
 
 @media (max-width: 480px) {
+  .blog-post-page .container .u-wrapper {
+    padding: 0 10px;
+  }
+  
   .blog-post {
     padding: 15px;
   }

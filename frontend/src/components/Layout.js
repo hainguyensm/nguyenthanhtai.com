@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../pages/HomePage.css';
 
-function Layout({ children, activeNavItem = '' }) {
+function Layout({ children, activeNavItem = '', className = '' }) {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -17,7 +17,7 @@ function Layout({ children, activeNavItem = '' }) {
   };
 
   return (
-    <div className="home-page">
+    <div className={`home-page ${className}`}>
       {/* Site Branding & Main Navigation */}
       <header className="site-branding-wrap">
         <div className="u-wrapper">

@@ -4,7 +4,7 @@ import './PageStyles.css';
 
 function ResearchPage() {
   return (
-    <Layout activeNavItem="research">
+    <Layout activeNavItem="research" className="research-page">
       <div className="page-content">
         <div className="page-header">
           <h1 className="page-title">Nghiên cứu</h1>

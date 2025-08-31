@@ -193,6 +193,7 @@ def update_post(id):
     data = request.json
     
     post.title = data.get('title', post.title)
+    post.slug = data.get('slug', post.slug)  # Fix: Allow slug updates
     post.content = data.get('content', post.content)
     post.summary = data.get('summary', post.summary)
     post.author = data.get('author', post.author)
@@ -257,6 +258,8 @@ def register():
 def get_categories():
     categories = db.session.query(BlogPost.category).distinct().filter(BlogPost.category.isnot(None)).all()
     return jsonify([cat[0] for cat in categories if cat[0]])
+
+
 
 # Comment endpoints
 @app.route('/api/posts/<string:slug>/comments', methods=['GET'])
@@ -461,7 +464,19 @@ def debug_static():
             return {'error': str(e)}
     return {'message': 'Debug not available in production'}
 
-# Catch-all route for React routing
+# Initialize database and create admin user
+def init_db():
+    with app.app_context():
+        db.create_all()
+        
+        if User.query.count() == 0:
+            admin_password = bcrypt.hashpw('admin123'.encode('utf-8'), bcrypt.gensalt())
+            admin_user = User(username='admin', password_hash=admin_password, is_admin=True)
+            db.session.add(admin_user)
+            db.session.commit()
+            print("Admin user created: username='admin', password='admin123'")
+
+# Catch-all route for React routing (restored after fixing API routing)
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
@@ -479,21 +494,9 @@ def serve(path):
     # For all other routes, serve the React app
     return render_template('index.html')
 
-# Initialize database and create admin user
-def init_db():
-    with app.app_context():
-        db.create_all()
-        
-        if User.query.count() == 0:
-            admin_password = bcrypt.hashpw('admin123'.encode('utf-8'), bcrypt.gensalt())
-            admin_user = User(username='admin', password_hash=admin_password, is_admin=True)
-            db.session.add(admin_user)
-            db.session.commit()
-            print("Admin user created: username='admin', password='admin123'")
-
 if __name__ == '__main__':
     init_db()
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5000))  # Using 5000 to completely avoid conflicts
     app.run(host='0.0.0.0', port=port, debug=app.config['DEBUG'])
 else:
     # For production deployment (gunicorn)

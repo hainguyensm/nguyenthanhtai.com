@@ -33,7 +33,7 @@ function ContactPage() {
   };
 
   return (
-    <Layout activeNavItem="contact">
+    <Layout activeNavItem="contact" className="contact-page">
       <div className="page-content">
         <div className="page-header">
           <h1 className="page-title">Liên hệ</h1>

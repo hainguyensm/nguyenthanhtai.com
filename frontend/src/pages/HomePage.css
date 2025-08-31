@@ -218,9 +218,11 @@
   padding: 50px;
 }
 
-/* Content Section Spacing */
-.container {
-  padding: 50px 0;
+/* Content Section Spacing - Match blog post pattern */
+.home-page .container {
+  max-width: none;
+  width: 100%;
+  padding-top: 10px;
   background: rgba(255, 255, 255, 0.7);
   border-radius: 12px;
   margin: 20px auto;
@@ -228,10 +230,20 @@
   backdrop-filter: blur(10px);
 }
 
+.home-page .container .u-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 15px 50px 15px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .u-wrapper {
     padding: 0 10px;
+  }
+  
+  .home-page .container .u-wrapper {
+    padding: 0 10px 50px 10px;
   }
 
   /* Site Branding Mobile */
@@ -348,8 +360,8 @@
     font-size: 14px;
   }
 
-  .container {
-    padding: 20px 0;
+  .home-page .container .u-wrapper {
+    padding: 0 10px 20px 10px;
   }
 }
 

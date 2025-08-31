@@ -4,7 +4,7 @@ import './PageStyles.css';
 
 function AboutPage() {
   return (
-    <Layout activeNavItem="about">
+    <Layout activeNavItem="about" className="about-page">
       <div className="page-content">
         <div className="page-header">
           <h1 className="page-title">Giới thiệu</h1>

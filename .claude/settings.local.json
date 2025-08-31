@@ -10,7 +10,10 @@
       "Bash(curl:*)",
       "Bash(npm install:*)",
       "Bash(npm uninstall:*)",
-      "WebFetch(domain:phamho.com)"
+      "WebFetch(domain:phamho.com)",
+      "Bash(taskkill:*)",
+      "Bash(grep:*)",
+      "Bash(copy:*)"
     ],
     "deny": [],
     "ask": []

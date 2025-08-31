@@ -45,7 +45,7 @@ function BlogPost() {
   }
 
   return (
-    <Layout>
+    <Layout className="blog-post-page">
       <article className="blog-post">
         <button onClick={() => navigate('/')} className="back-button">
           ← Quay lại

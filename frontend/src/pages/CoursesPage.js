@@ -4,7 +4,7 @@ import './PageStyles.css';
 
 function CoursesPage() {
   return (
-    <Layout activeNavItem="courses">
+    <Layout activeNavItem="courses" className="courses-page">
       <div className="page-content">
         <div className="page-header">
           <h1 className="page-title">Khóa học</h1>

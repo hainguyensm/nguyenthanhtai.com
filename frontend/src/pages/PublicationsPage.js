@@ -4,7 +4,7 @@ import './PageStyles.css';
 
 function PublicationsPage() {
   return (
-    <Layout activeNavItem="publications">
+    <Layout activeNavItem="publications" className="publications-page">
       <div className="page-content">
         <div className="page-header">
           <h1 className="page-title">Công bố khoa học</h1>
