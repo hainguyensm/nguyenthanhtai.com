@@ -1,22 +1,38 @@
-# BioTech Blog - Personal Biotechnology Blog
+# Nguyen Thanh Tai Blog - Biotechnology Research Blog
 
-A full-stack blog application for biotechnology content with admin dashboard.
+A professional full-stack blog application for biotechnology research content with comprehensive admin dashboard and public pages.
 
 ## Features
 
-- Public blog display with category filtering
-- Markdown support for blog content
-- Admin dashboard for blog management
-- Authentication system
-- SQLite database for data storage
-- Responsive design
+### Public Pages
+- **Homepage**: Blog post listing with category filtering
+- **About**: Personal introduction and expertise areas
+- **Research**: Current research projects and methodologies
+- **Publications**: Scientific papers, books, and conference presentations
+- **Courses**: Available courses with registration information
+- **Contact**: Contact form and collaboration opportunities
+
+### Blog Features
+- Rich text editor with HTML support and image upload
+- Category and tag management
+- SEO-friendly URLs with slugs
+- Responsive design for all devices
+- Professional biotechnology theme
+
+### Admin Dashboard
+- Create, edit, and delete blog posts
+- Image gallery and management
+- User authentication with JWT
+- Database image tracking
+- Advanced content editor
 
 ## Tech Stack
 
-- **Backend**: Python Flask, SQLAlchemy, Flask-JWT-Extended
+- **Backend**: Python Flask, SQLAlchemy, Flask-JWT-Extended, bcrypt
 - **Frontend**: React.js, React Router, Axios
-- **Database**: SQLite
-- **Styling**: Custom CSS
+- **Database**: SQLite (development) / PostgreSQL (production)
+- **Styling**: Custom CSS with professional biotechnology theme
+- **Deployment**: Render.com with gunicorn
 
 ## Installation
 
@@ -107,5 +123,75 @@ nguyenthanhtai.com/
 │   │   ├── pages/         # Page components
 │   │   └── App.js         # Main app component
 │   └── package.json       # Node dependencies
+├── app.py                 # Production Flask app (root level)
+├── requirements.txt       # Python dependencies
+├── Procfile              # Process file for deployment
+├── render.yaml           # Render deployment configuration
+├── build.sh              # Build script
 └── README.md
-```
+
+## Deployment on Render.com
+
+This application is configured for easy deployment on Render.com with PostgreSQL database.
+
+### Prerequisites
+- GitHub repository with your code
+- Render.com account
+
+### Deployment Steps
+
+1. **Connect GitHub Repository**
+   - Go to Render.com and create a new account
+   - Connect your GitHub account
+   - Import your repository
+
+2. **Deploy Using render.yaml**
+   - Render will automatically detect the `render.yaml` file
+   - It will create both a web service and PostgreSQL database
+   - Environment variables will be set automatically
+
+3. **Manual Deployment (Alternative)**
+   - Create a new Web Service
+   - Select your repository
+   - Set build command: `./build.sh`
+   - Set start command: `gunicorn --bind 0.0.0.0:$PORT app:app`
+   - Add environment variables:
+     - `FLASK_ENV=production`
+     - `JWT_SECRET_KEY=your-secure-secret-key`
+     - `DATABASE_URL=your-postgresql-connection-string`
+
+4. **Database Setup**
+   - Create a PostgreSQL database service
+   - Copy the database connection string
+   - Add it as `DATABASE_URL` environment variable
+
+### Environment Variables
+
+Required environment variables for production:
+
+- `FLASK_ENV`: Set to `production`
+- `JWT_SECRET_KEY`: Secure random string for JWT tokens
+- `DATABASE_URL`: PostgreSQL connection string
+- `PORT`: Automatically set by Render
+
+### Post-Deployment
+
+After deployment:
+1. The database tables will be created automatically
+2. Default admin user will be created:
+   - Username: `admin`
+   - Password: `admin123`
+3. Visit your Render URL to access the application
+
+### Live Demo
+
+Once deployed, your site will be available at your Render domain (e.g., `https://your-app-name.onrender.com`)
+
+Available pages:
+- `/` - Homepage with blog posts
+- `/about` - About page
+- `/research` - Research projects
+- `/publications` - Publications and papers
+- `/courses` - Available courses
+- `/contact` - Contact information
+- `/admin` - Admin dashboard (requires login)

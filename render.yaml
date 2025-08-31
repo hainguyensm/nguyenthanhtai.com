@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: nguyen-thanh-tai-blog
+    env: python
+    region: oregon
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT app:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nguyen-thanh-tai-blog-db
+          property: connectionString
+    
+  - type: pserv
+    name: nguyen-thanh-tai-blog-db
+    env: postgresql
+    region: oregon
+    databaseName: blog_db
+    databaseUser: blog_user
