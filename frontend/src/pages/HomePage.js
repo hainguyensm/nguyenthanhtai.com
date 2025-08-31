@@ -60,7 +60,7 @@ function HomePage() {
             <div className="logo-section">
               <div className="site-logo">
                 <div className="logo-img">
-                  <img src="/logo.png" alt="Nguyen Thanh Tai Blog" />
+                  <img src="/static/logo.png" alt="Nguyen Thanh Tai Blog" />
                 </div>
               </div>
               <div className="site-info">

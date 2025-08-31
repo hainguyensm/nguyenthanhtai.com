@@ -1,10 +1,32 @@
 .home-page {
   min-height: 100vh;
+  background: linear-gradient(180deg, #f8fdf9 0%, #f0f9f1 50%, #e8f5e9 100%);
+  position: relative;
+}
+
+.home-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(92, 165, 33, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(44, 85, 48, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(92, 165, 33, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.home-page > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Container wrapper like reference site */
 .u-wrapper {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 15px;
 }
@@ -30,21 +52,15 @@
 }
 
 .site-logo .logo-img {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
 }
 
 .site-logo .logo-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: auto;
+  height: auto;
 }
 
 .logo-text {
@@ -91,9 +107,10 @@
 
 /* Main Navigation */
 .main-navigation {
-  background-color: #dd8c11;
+  background: linear-gradient(135deg, #2c5530, #3a6b3f);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .nav-menu {
@@ -120,8 +137,10 @@
 
 .nav-link:hover,
 .nav-link.active {
-  background-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #4a7c59, #5ca521);
   color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .nav-link.active::after {
@@ -137,22 +156,24 @@
 
 /* Admin Button in Navigation */
 .nav-admin-btn {
-  background: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #c1225a, #dd1111);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 8px 16px;
   border-radius: 20px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   transition: all 0.3s ease;
   margin: 8px 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .nav-admin-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, #dd1111, #ff4056);
   border-color: rgba(255, 255, 255, 0.5);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .category-filter {
@@ -163,19 +184,24 @@
 }
 
 .category-filter button {
-  padding: 8px 16px;
-  border: 1px solid #ddd;
+  padding: 10px 18px;
+  border: 2px solid #5ca521;
   background: white;
-  border-radius: 20px;
+  color: #2c5530;
+  border-radius: 25px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .category-filter button.active,
 .category-filter button:hover {
-  background: #3498db;
+  background: linear-gradient(135deg, #5ca521, #4a7c59);
   color: white;
-  border-color: #3498db;
+  border-color: #5ca521;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(92, 165, 33, 0.3);
 }
 
 .blog-grid {
@@ -194,7 +220,12 @@
 
 /* Content Section Spacing */
 .container {
-  padding: 40px 0;
+  padding: 50px 0;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  margin: 20px auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
 }
 
 /* Responsive Design */
@@ -324,10 +355,12 @@
 
 /* Footer Section */
 .site-footer {
-  background-color: #c1225a;
+  background: linear-gradient(135deg, #2c5530, #1a3a1e);
   color: white;
-  padding: 20px 0;
+  padding: 30px 0;
   margin-top: 60px;
+  border-top: 3px solid #5ca521;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .copyright-text {
@@ -342,15 +375,17 @@
 }
 
 .footer-link {
-  color: #ff4056;
+  color: #eded10;
   text-decoration: none;
   transition: all 0.3s ease;
-  font-weight: 500;
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .footer-link:hover {
-  color: #ff6b7a;
+  color: #ffffff;
   text-decoration: underline;
+  text-shadow: 0 0 8px rgba(237, 237, 16, 0.6);
 }
 
 /* Responsive Footer */

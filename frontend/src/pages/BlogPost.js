@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import Layout from '../components/Layout';
 import ContentRenderer from '../components/ContentRenderer';
 import { blogApi } from '../api/api';
 import './BlogPost.css';
@@ -27,16 +28,24 @@ function BlogPost() {
   };
 
   if (loading) {
-    return <div className="loading">Đang tải...</div>;
+    return (
+      <Layout>
+        <div className="loading">Đang tải...</div>
+      </Layout>
+    );
   }
 
   if (!post) {
-    return <div className="error">Không tìm thấy bài viết</div>;
+    return (
+      <Layout>
+        <div className="error">Không tìm thấy bài viết</div>
+      </Layout>
+    );
   }
 
   return (
-    <article className="blog-post">
-      <div className="container">
+    <Layout>
+      <article className="blog-post">
         <button onClick={() => navigate('/')} className="back-button">
           ← Quay lại
         </button>
@@ -70,20 +79,8 @@ function BlogPost() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Footer */}
-      <footer className="site-footer">
-        <div className="u-wrapper">
-          <div className="copyright-text">
-            <p>
-              Copyright © {new Date().getFullYear()} <a href="/" className="footer-link">Nguyen Thanh Tai Blog</a>. 
-              Powered by <a href="#" className="footer-link">ReactJS & Flask</a>.
-            </p>
-          </div>
-        </div>
-      </footer>
-    </article>
+      </article>
+    </Layout>
   );
 }
 
