@@ -1,0 +1,1 @@
+web: cd cms-backend && python app_unified.py

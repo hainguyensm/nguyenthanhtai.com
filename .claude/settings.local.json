@@ -1,20 +1,25 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir:*)",
-      "Bash(npm install)",
-      "Bash(npm run build:*)",
-      "Bash(cp:*)",
-      "Bash(python:*)",
-      "Bash(pip install:*)",
-      "Bash(curl:*)",
-      "Bash(npm install:*)",
-      "Bash(npm uninstall:*)",
-      "WebFetch(domain:phamho.com)",
+      "Bash(tasklist:*)",
+      "Bash(wmic:*)",
       "Bash(taskkill:*)",
-      "Bash(grep:*)",
-      "Bash(copy:*)",
-      "Bash(xcopy:*)"
+      "Bash(./setup-cms.bat)",
+      "Bash(python:*)",
+      "Bash(venvScripts:*)",
+      "Bash(pip install:*)",
+      "Bash(venv/Scripts/activate:*)",
+      "Bash(npm install)",
+      "Bash(npm start)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(xcopy:*)",
+      "Bash(curl:*)",
+      "Bash(chcp:*)",
+      "Bash(set PYTHONIOENCODING=utf-8)",
+      "Bash(robocopy:*)",
+      "Bash(if exist static rmdir /s /q static)",
+      "Bash(dir)"
     ],
     "deny": [],
     "ask": []

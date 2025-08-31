@@ -1,31 +1,36 @@
 services:
   - type: web
-    name: my-blog-cms
+    name: nguyen-thanh-tai-blog
     env: python
     buildCommand: |
       # Install Python dependencies
       cd cms-backend
       pip install -r requirements.txt
-      cd ../cms-frontend
       # Install Node.js dependencies and build React app
+      cd ../cms-frontend
       npm install
       npm run build
       # Copy built frontend to backend static folder
-      rm -rf ../cms-backend/static/*
-      cp -r build/* ../cms-backend/static/
+      cd ../cms-backend
+      rm -rf static/*
+      cp -r ../cms-frontend/build/* static/
     startCommand: |
       cd cms-backend
       gunicorn --bind 0.0.0.0:$PORT app_unified:app
     envVars:
       - key: FLASK_ENV
         value: production
+      - key: FLASK_APP
+        value: app_unified.py
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
         fromDatabase:
           name: blog-database
           property: connectionString
-    healthCheckPath: /api/posts
+    healthCheckPath: /
+    regions:
+      - oregon
     
 databases:
   - name: blog-database

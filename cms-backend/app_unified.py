@@ -433,14 +433,19 @@ with app.app_context():
     create_tables()
 
 if __name__ == '__main__':
-    print("\n" + "="*60)
-    print("CMS SYSTEM - UNIFIED BACKEND + FRONTEND")
-    print("="*60)
-    print("\nServer running at: http://localhost:5000")
-    print("Admin Panel: http://localhost:5000/admin")
-    print("\nDefault Login:")
-    print("  Username: admin")
-    print("  Password: admin123")
-    print("\n" + "="*60 + "\n")
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') != 'production'
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    if debug:
+        print("\n" + "="*60)
+        print("NGUYEN THANH TAI BLOG - UNIFIED BACKEND + FRONTEND")
+        print("="*60)
+        print(f"\nServer running at: http://localhost:{port}")
+        print(f"Admin Panel: http://localhost:{port}/admin")
+        print("\nDefault Login:")
+        print("  Username: admin")
+        print("  Password: admin123")
+        print("\n" + "="*60 + "\n")
+    
+    app.run(debug=debug, host='0.0.0.0', port=port)
