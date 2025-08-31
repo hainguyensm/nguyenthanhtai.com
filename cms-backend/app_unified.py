@@ -23,7 +23,7 @@ app = Flask(__name__, static_folder='static', static_url_path='')
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     # Production database (PostgreSQL)
-    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cms.db'
 else:
     # Development database (SQLite)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cms.db'
