@@ -94,5 +94,6 @@ jspm_packages/
 
 # Serverless directories
 .serverless
-/backend/static
-/backend/templates/static
+
+# Note: backend/static and backend/templates are needed for deployment
+# so they are NOT ignored

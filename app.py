@@ -12,7 +12,10 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__, static_folder='backend/static', template_folder='backend/templates')
+app = Flask(__name__, 
+           static_folder='backend/static', 
+           static_url_path='/static',
+           template_folder='backend/templates')
 
 # Configuration
 if os.environ.get('DATABASE_URL'):
@@ -313,13 +316,53 @@ def delete_image(image_id):
     
     return '', 204
 
+# Serve static files
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    print(f"Serving static file: {filename} from {app.static_folder}")
+    try:
+        return send_from_directory(app.static_folder, filename)
+    except Exception as e:
+        print(f"Error serving static file {filename}: {e}")
+        return f"Static file not found: {filename}", 404
+
+# Debug route to list static files (remove in production)
+@app.route('/debug/static')
+def debug_static():
+    if app.config['DEBUG']:
+        try:
+            files = []
+            static_dir = app.static_folder
+            for root, dirs, filenames in os.walk(static_dir):
+                for filename in filenames:
+                    rel_path = os.path.relpath(os.path.join(root, filename), static_dir)
+                    files.append(rel_path.replace('\\', '/'))
+            return {
+                'static_folder': static_dir,
+                'static_url_path': app.static_url_path,
+                'files': files
+            }
+        except Exception as e:
+            return {'error': str(e)}
+    return {'message': 'Debug not available in production'}
+
+# Catch-all route for React routing
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+    # Handle static files
+    if path.startswith('static/'):
+        try:
+            return send_from_directory(app.static_folder, path[7:])  # Remove 'static/' prefix
+        except:
+            pass
+    
+    # Check if it's a static file in the static folder
+    if path and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
-    else:
-        return render_template('index.html')
+    
+    # For all other routes, serve the React app
+    return render_template('index.html')
 
 # Initialize database and create admin user
 def init_db():

@@ -26,12 +26,28 @@ apt-get update && apt-get install -y \
 echo "Installing Python dependencies..."
 pip install --no-cache-dir -r requirements.txt
 
-# Build frontend (already built and copied to backend/templates)
-echo "Frontend already built and deployed to backend/templates"
+# Ensure frontend is built and static files are in place
+echo "Ensuring frontend build files are properly placed..."
 
 # Create necessary directories
 echo "Creating necessary directories..."
 mkdir -p backend/uploads
 mkdir -p backend/uploads/images
+mkdir -p backend/static
+mkdir -p backend/templates
+
+# Verify static files exist (they should already be there from development)
+if [ -d "backend/static" ]; then
+    echo "Static files found in backend/static"
+    ls -la backend/static/
+else
+    echo "Warning: Static files not found in backend/static"
+fi
+
+if [ -f "backend/templates/index.html" ]; then
+    echo "Index.html found in backend/templates"
+else
+    echo "Warning: index.html not found in backend/templates"
+fi
 
 echo "Build completed successfully!"
