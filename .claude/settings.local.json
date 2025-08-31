@@ -19,7 +19,8 @@
       "Bash(set PYTHONIOENCODING=utf-8)",
       "Bash(robocopy:*)",
       "Bash(if exist static rmdir /s /q static)",
-      "Bash(dir)"
+      "Bash(dir)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

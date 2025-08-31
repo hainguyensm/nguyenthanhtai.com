@@ -1,1 +1,1 @@
-web: cd cms-backend && python app_unified.py
+web: gunicorn --bind 0.0.0.0:$PORT --chdir cms-backend app_unified:app
