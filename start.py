@@ -9,6 +9,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'cms-backend'))
 # Import the Flask app from app_unified
 from app_unified import app
 
+# Make the app available for gunicorn at root level
+app = app
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') != 'production'

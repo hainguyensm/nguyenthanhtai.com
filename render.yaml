@@ -15,7 +15,7 @@ services:
       rm -rf static/*
       cp -r ../cms-frontend/build/* static/
     startCommand: |
-      gunicorn --bind 0.0.0.0:$PORT --chdir cms-backend app_unified:app
+      gunicorn --bind 0.0.0.0:$PORT start:app
     envVars:
       - key: FLASK_ENV
         value: production
