@@ -1,4 +1,4 @@
-from app import app, db, jwt, allowed_file, role_required, User, Post, Category, Tag, Comment, Media, Setting, Theme, Plugin, PostRevision
+from app_unified import app, db, jwt, allowed_file, role_required, User, Post, Category, Tag, Comment, Media, Setting, Theme, Plugin, PostRevision
 from flask import jsonify, request, send_from_directory
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
