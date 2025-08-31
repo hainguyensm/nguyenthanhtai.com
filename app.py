@@ -77,6 +77,40 @@ class Image(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('blog_post.id'), nullable=False)
+    author_name = db.Column(db.String(100), nullable=False)
+    author_email = db.Column(db.String(150), nullable=True)
+    author_avatar = db.Column(db.String(500), nullable=True)  # URL to avatar image
+    social_provider = db.Column(db.String(50), nullable=True)  # facebook, google, twitter, etc.
+    social_id = db.Column(db.String(100), nullable=True)  # ID from social provider
+    content = db.Column(db.Text, nullable=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey('comment.id'), nullable=True)  # For replies
+    is_approved = db.Column(db.Boolean, default=True)  # For moderation
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    post = db.relationship('BlogPost', backref=db.backref('comments', lazy=True, cascade='all, delete-orphan'))
+    replies = db.relationship('Comment', backref=db.backref('parent', remote_side=[id]), lazy=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'post_id': self.post_id,
+            'author_name': self.author_name,
+            'author_email': self.author_email,
+            'author_avatar': self.author_avatar,
+            'social_provider': self.social_provider,
+            'content': self.content,
+            'parent_id': self.parent_id,
+            'is_approved': self.is_approved,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'replies_count': len(self.replies) if self.replies else 0
+        }
+
 class BlogPost(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
@@ -223,6 +257,87 @@ def register():
 def get_categories():
     categories = db.session.query(BlogPost.category).distinct().filter(BlogPost.category.isnot(None)).all()
     return jsonify([cat[0] for cat in categories if cat[0]])
+
+# Comment endpoints
+@app.route('/api/posts/<string:slug>/comments', methods=['GET'])
+def get_comments(slug):
+    post = BlogPost.query.filter_by(slug=slug).first_or_404()
+    
+    # Get top-level comments (no parent) with their replies
+    comments = Comment.query.filter_by(post_id=post.id, parent_id=None, is_approved=True)\
+                           .order_by(Comment.created_at.desc()).all()
+    
+    def get_comment_with_replies(comment):
+        comment_data = comment.to_dict()
+        replies = Comment.query.filter_by(parent_id=comment.id, is_approved=True)\
+                              .order_by(Comment.created_at.asc()).all()
+        comment_data['replies'] = [reply.to_dict() for reply in replies]
+        return comment_data
+    
+    comments_data = [get_comment_with_replies(comment) for comment in comments]
+    
+    return jsonify({
+        'comments': comments_data,
+        'total': len(comments_data)
+    })
+
+@app.route('/api/posts/<string:slug>/comments', methods=['POST'])
+def create_comment(slug):
+    post = BlogPost.query.filter_by(slug=slug).first_or_404()
+    data = request.json
+    
+    # Validate required fields
+    if not data.get('author_name') or not data.get('content'):
+        return jsonify({'error': 'Author name and content are required'}), 400
+    
+    # Create comment
+    comment = Comment(
+        post_id=post.id,
+        author_name=data.get('author_name'),
+        author_email=data.get('author_email'),
+        author_avatar=data.get('author_avatar'),
+        social_provider=data.get('social_provider'),
+        social_id=data.get('social_id'),
+        content=data.get('content'),
+        parent_id=data.get('parent_id')  # For replies
+    )
+    
+    db.session.add(comment)
+    db.session.commit()
+    
+    return jsonify(comment.to_dict()), 201
+
+@app.route('/api/admin/comments', methods=['GET'])
+@jwt_required()
+def get_all_comments():
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    comments = Comment.query.order_by(Comment.created_at.desc())\
+                           .paginate(page=page, per_page=per_page, error_out=False)
+    
+    return jsonify({
+        'comments': [comment.to_dict() for comment in comments.items],
+        'total': comments.total,
+        'pages': comments.pages,
+        'current_page': page
+    })
+
+@app.route('/api/admin/comments/<int:comment_id>/approve', methods=['PUT'])
+@jwt_required()
+def approve_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    comment.is_approved = True
+    db.session.commit()
+    return jsonify(comment.to_dict())
+
+@app.route('/api/admin/comments/<int:comment_id>', methods=['DELETE'])
+@jwt_required()
+def delete_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    db.session.delete(comment)
+    db.session.commit()
+    return '', 204
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS

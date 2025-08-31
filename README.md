@@ -16,12 +16,16 @@ A professional full-stack blog application for biotechnology research content wi
 - Rich text editor with HTML support and image upload
 - Category and tag management
 - SEO-friendly URLs with slugs
+- **Social Comment System**: Users can comment on blog posts with social login support
+- **Threaded Comments**: Reply functionality with nested comment threads
+- **Multiple Login Options**: Facebook, Google, Twitter, and guest commenting
 - Responsive design for all devices
 - Professional biotechnology theme
 
 ### Admin Dashboard
 - Create, edit, and delete blog posts
 - Image gallery and management
+- **Comment Management**: Approve, moderate, and delete comments
 - User authentication with JWT
 - Database image tracking
 - Advanced content editor
@@ -97,11 +101,16 @@ The frontend will run on http://localhost:3000
 - `GET /api/posts` - Get all published posts
 - `GET /api/posts/<slug>` - Get single post by slug
 - `GET /api/categories` - Get all categories
+- `GET /api/posts/<slug>/comments` - Get comments for a post
+- `POST /api/posts/<slug>/comments` - Create new comment
 
 ### Protected Endpoints (Require JWT)
 - `POST /api/admin/posts` - Create new post
 - `PUT /api/admin/posts/<id>` - Update post
 - `DELETE /api/admin/posts/<id>` - Delete post
+- `GET /api/admin/comments` - Get all comments for moderation
+- `PUT /api/admin/comments/<id>/approve` - Approve comment
+- `DELETE /api/admin/comments/<id>` - Delete comment
 
 ### Authentication
 - `POST /api/auth/login` - Login

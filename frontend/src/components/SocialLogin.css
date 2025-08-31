@@ -1,0 +1,207 @@
+/* Social Login */
+.social-login {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.social-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.social-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.social-btn.facebook {
+  background: linear-gradient(135deg, #4267B2, #365899);
+}
+
+.social-btn.facebook:hover {
+  background: linear-gradient(135deg, #365899, #2d4373);
+}
+
+.social-btn.google {
+  background: linear-gradient(135deg, #DB4437, #C23321);
+}
+
+.social-btn.google:hover {
+  background: linear-gradient(135deg, #C23321, #A52714);
+}
+
+.social-btn.twitter {
+  background: linear-gradient(135deg, #1DA1F2, #1991DB);
+}
+
+.social-btn.twitter:hover {
+  background: linear-gradient(135deg, #1991DB, #1480C4);
+}
+
+.social-icon {
+  font-size: 18px;
+  filter: grayscale(0);
+}
+
+.login-divider {
+  text-align: center;
+  margin: 20px 0;
+  position: relative;
+  color: #666;
+}
+
+.login-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #ddd;
+  z-index: 1;
+}
+
+.login-divider span {
+  background: white;
+  padding: 0 15px;
+  position: relative;
+  z-index: 2;
+  font-size: 14px;
+}
+
+.guest-login-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #6c757d, #5a6268);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.guest-login-btn:hover {
+  background: linear-gradient(135deg, #5a6268, #495057);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Guest Form */
+.guest-form {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  border: 2px solid rgba(92, 165, 33, 0.2);
+}
+
+.guest-form input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  margin-bottom: 15px;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.guest-form input:focus {
+  outline: none;
+  border-color: #5ca521;
+  box-shadow: 0 0 0 3px rgba(92, 165, 33, 0.1);
+}
+
+.guest-form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.guest-form-actions button {
+  flex: 1;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.guest-form-actions button[type="submit"] {
+  background: linear-gradient(135deg, #5ca521, #4a7c59);
+  color: white;
+  border: none;
+}
+
+.guest-form-actions button[type="submit"]:hover {
+  background: linear-gradient(135deg, #4a7c59, #2c5530);
+  transform: translateY(-1px);
+}
+
+.guest-form-actions button[type="button"] {
+  background: #f0f0f0;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.guest-form-actions button[type="button"]:hover {
+  background: #e0e0e0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .social-buttons {
+    gap: 8px;
+  }
+  
+  .social-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  
+  .guest-form {
+    padding: 15px;
+  }
+  
+  .guest-form input {
+    padding: 10px 12px;
+  }
+  
+  .guest-form-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .social-login {
+    max-width: 100%;
+  }
+  
+  .social-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .social-icon {
+    font-size: 16px;
+  }
+}

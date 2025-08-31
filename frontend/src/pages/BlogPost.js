@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import ContentRenderer from '../components/ContentRenderer';
+import Comments from '../components/Comments';
 import { blogApi } from '../api/api';
 import './BlogPost.css';
 
@@ -79,6 +80,9 @@ function BlogPost() {
             ))}
           </div>
         )}
+
+        {/* Comments Section */}
+        <Comments postSlug={slug} />
       </article>
     </Layout>
   );
