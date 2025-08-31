@@ -3,7 +3,7 @@ services:
     name: nguyen-thanh-tai-blog
     env: python
     region: oregon
-    buildCommand: "./build.sh"
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn --bind 0.0.0.0:$PORT app:app"
     envVars:
       - key: FLASK_ENV
