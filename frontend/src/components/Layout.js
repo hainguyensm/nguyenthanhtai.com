@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BackToTop from './BackToTop';
+import ChatHeader from './ChatHeader';
 import '../pages/HomePage.css';
 
 function Layout({ children, activeNavItem = '', className = '' }) {
@@ -80,6 +82,12 @@ function Layout({ children, activeNavItem = '', className = '' }) {
           </div>
         </div>
       </footer>
+
+      {/* Back to Top Button */}
+      <BackToTop />
+
+      {/* Chat Header */}
+      <ChatHeader />
     </div>
   );
 }
