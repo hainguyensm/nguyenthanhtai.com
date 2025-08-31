@@ -398,16 +398,9 @@ def create_tables():
         
         db.session.commit()
 
-# Import routes to register them
-from routes import *
+# Static files are automatically served by Flask since we specified static_folder='static'
 
-# Serve static files (JS, CSS, etc.)
-@app.route('/static/<path:filename>')
-def serve_static_files(filename):
-    """Serve React static files (JS, CSS, images, etc.)"""
-    return send_from_directory(os.path.join(app.root_path, 'static', 'static'), filename)
-
-# Serve manifest.json and other root static files
+# Serve manifest.json and other root static files  
 @app.route('/manifest.json')
 @app.route('/asset-manifest.json')
 def serve_manifest():
@@ -429,6 +422,9 @@ def serve_react_app(path):
     # Serve index.html for all other routes (React Router will handle them)
     index_path = os.path.join(app.root_path, 'static', 'index.html')
     return send_file(index_path)
+
+# Import routes to register them (after all local routes are defined)
+from routes import *
 
 # Create tables and default data
 with app.app_context():

@@ -20,7 +20,11 @@
       "Bash(robocopy:*)",
       "Bash(if exist static rmdir /s /q static)",
       "Bash(dir)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(.start-unified-cms.bat)",
+      "Bash(cmd:*)",
+      "Bash(dir:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []
