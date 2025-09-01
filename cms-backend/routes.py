@@ -199,15 +199,24 @@ def get_posts():
     
     query = Post.query
     
-    # Apply filters
+    # Filter out posts from hidden categories
+    # Include posts without categories OR posts with visible categories
+    query = query.outerjoin(Category, Post.category_id == Category.id).filter(
+        db.or_(
+            Post.category_id == None,
+            Category.is_visible == True
+        )
+    )
+    
+    # Apply filters - use explicit Post.column to avoid ambiguity after join
     if status != 'all':
-        query = query.filter_by(status=status)
+        query = query.filter(Post.status == status)
     if post_type:
-        query = query.filter_by(post_type=post_type)
+        query = query.filter(Post.post_type == post_type)
     if category_id:
-        query = query.filter_by(category_id=category_id)
+        query = query.filter(Post.category_id == category_id)
     if author_id:
-        query = query.filter_by(author_id=author_id)
+        query = query.filter(Post.author_id == author_id)
     if tag:
         query = query.join(Post.tags).filter(Tag.slug == tag)
     if search:
@@ -233,6 +242,11 @@ def get_post(slug):
         post = Post.query.get_or_404(int(slug))
     else:
         post = Post.query.filter_by(slug=slug).first_or_404()
+    
+    # Check if post belongs to a hidden category
+    if post.category and not post.category.is_visible:
+        # Return 404 for posts in hidden categories
+        return jsonify({'error': 'Post not found'}), 404
     
     # Increment view count
     post.view_count += 1
@@ -375,7 +389,7 @@ def delete_post(post_id):
 # Category Management Routes
 @app.route('/api/categories', methods=['GET'])
 def get_categories():
-    categories = Category.query.filter_by(parent_id=None).all()
+    categories = Category.query.filter_by(parent_id=None, is_visible=True).all()
     return jsonify([cat.to_dict() for cat in categories])
 
 @app.route('/api/categories', methods=['POST'])
@@ -391,13 +405,51 @@ def create_category():
         parent_id=data.get('parent_id'),
         image_url=data.get('image_url'),
         meta_title=data.get('meta_title'),
-        meta_description=data.get('meta_description')
+        meta_description=data.get('meta_description'),
+        is_visible=data.get('is_visible', True)
     )
     
     db.session.add(category)
     db.session.commit()
     
     return jsonify(category.to_dict()), 201
+
+@app.route('/api/categories/<int:category_id>', methods=['PUT'])
+@jwt_required()
+@role_required(['admin', 'editor'])
+def update_category(category_id):
+    category = Category.query.get_or_404(category_id)
+    data = request.get_json()
+    
+    category.name = data.get('name', category.name)
+    category.slug = slugify(data.get('name', category.name))
+    category.description = data.get('description', category.description)
+    category.parent_id = data.get('parent_id', category.parent_id)
+    category.image_url = data.get('image_url', category.image_url)
+    category.meta_title = data.get('meta_title', category.meta_title)
+    category.meta_description = data.get('meta_description', category.meta_description)
+    category.is_visible = data.get('is_visible', category.is_visible)
+    
+    db.session.commit()
+    
+    return jsonify(category.to_dict())
+
+@app.route('/api/categories/<int:category_id>', methods=['DELETE'])
+@jwt_required()
+@role_required(['admin', 'editor'])
+def delete_category(category_id):
+    category = Category.query.get_or_404(category_id)
+    
+    # Check if category has posts
+    posts_count = Post.query.filter_by(category_id=category_id).count()
+    if posts_count > 0:
+        # Remove category from all posts (set to null)
+        Post.query.filter_by(category_id=category_id).update({'category_id': None})
+    
+    db.session.delete(category)
+    db.session.commit()
+    
+    return jsonify({'message': 'Category deleted successfully'})
 
 # Similar routes for tags, comments, media, settings, themes, and plugins...
 # (Continuing with key routes)

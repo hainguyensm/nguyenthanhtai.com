@@ -90,6 +90,15 @@ class ApiService {
     return response.data;
   };
 
+  updateCategory = async (id, categoryData) => {
+    const response = await this.client.put(`/categories/${id}`, categoryData);
+    return response.data;
+  };
+
+  deleteCategory = async (id) => {
+    await this.client.delete(`/categories/${id}`);
+  };
+
   // Tags endpoints
   getTags = async () => {
     const response = await this.client.get('/tags');

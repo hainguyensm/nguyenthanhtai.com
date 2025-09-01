@@ -105,6 +105,7 @@ class Category(db.Model):
     image_url = db.Column(db.String(255))
     meta_title = db.Column(db.String(255))
     meta_description = db.Column(db.Text)
+    is_visible = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Self-referential relationship for parent/child categories
@@ -120,6 +121,7 @@ class Category(db.Model):
             'image_url': self.image_url,
             'meta_title': self.meta_title,
             'meta_description': self.meta_description,
+            'is_visible': self.is_visible,
             'created_at': self.created_at.isoformat(),
             'children': [child.to_dict() for child in self.children] if self.children else []
         }
@@ -425,16 +427,36 @@ def serve_manifest():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react_app(path):
+    # Serve manifest.json and asset-manifest.json from root
+    if path == 'manifest.json':
+        manifest_path = os.path.join(app.root_path, 'manifest.json')
+        if os.path.exists(manifest_path):
+            return send_file(manifest_path)
+        return jsonify({'error': 'manifest.json not found'}), 404
+    
+    if path == 'asset-manifest.json':
+        asset_manifest_path = os.path.join(app.root_path, 'asset-manifest.json')
+        if os.path.exists(asset_manifest_path):
+            return send_file(asset_manifest_path)
+        return jsonify({'error': 'asset-manifest.json not found'}), 404
+    
     # Don't serve React app for API routes, uploads, or static files
     if (path.startswith('api/') or 
         path.startswith('uploads/') or 
-        path.startswith('static/') or
-        path in ['manifest.json', 'asset-manifest.json']):
+        path.startswith('static/')):
         return jsonify({'error': 'Not found'}), 404
     
     # Serve index.html for all other routes (React Router will handle them)
-    index_path = os.path.join(app.root_path, 'static', 'index.html')
-    return send_file(index_path)
+    # Try templates directory first, then static directory
+    templates_index = os.path.join(app.root_path, 'templates', 'index.html')
+    static_index = os.path.join(app.root_path, 'static', 'index.html')
+    
+    if os.path.exists(templates_index):
+        return send_file(templates_index)
+    elif os.path.exists(static_index):
+        return send_file(static_index)
+    else:
+        return jsonify({'error': 'index.html not found'}), 404
 
 # Import routes to register them (after all local routes are defined)
 from routes import *

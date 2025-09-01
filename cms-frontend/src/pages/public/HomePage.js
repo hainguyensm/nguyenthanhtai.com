@@ -88,7 +88,8 @@ const HomePage = () => {
     );
   }
 
-  const regularPosts = featuredPost ? posts.slice(1) : posts;
+  // Show all posts since featured post is hidden
+  const regularPosts = posts;
 
   return (
     <Box>
@@ -103,8 +104,8 @@ const HomePage = () => {
               </Alert>
             )}
 
-        {/* Featured Post */}
-        {featuredPost && (
+{/* Featured Post - Hidden */}
+        {/* {featuredPost && (
           <Box sx={{ mb: 8 }}>
             <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
               Featured Post
@@ -178,7 +179,7 @@ const HomePage = () => {
               </Grid>
             </Paper>
           </Box>
-        )}
+        )} */}
 
             {/* Latest Posts */}
             {regularPosts.length > 0 ? (
@@ -369,8 +370,8 @@ const HomePage = () => {
                 )}
               </Paper>
 
-              {/* Recent Posts Widget */}
-              <Paper elevation={2} sx={{ p: 3 }}>
+{/* Recent Posts Widget - Hidden */}
+              {/* <Paper elevation={2} sx={{ p: 3 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Article color="primary" />
                   Recent Posts
@@ -415,7 +416,7 @@ const HomePage = () => {
                     {index < 4 && <Divider />}
                   </Box>
                 ))}
-              </Paper>
+              </Paper> */}
             </Box>
           </Grid>
         </Grid>
