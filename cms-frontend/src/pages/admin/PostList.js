@@ -51,7 +51,9 @@ const PostList = () => {
     status: 'all',
     search: '',
     author_id: '',
+    category_id: '',
   });
+  const [categories, setCategories] = useState([]);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
@@ -63,7 +65,17 @@ const PostList = () => {
 
   useEffect(() => {
     fetchPosts();
+    fetchCategories();
   }, [page, rowsPerPage, filters]);
+
+  const fetchCategories = async () => {
+    try {
+      const data = await apiService.getCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
+  };
 
   const fetchPosts = async () => {
     try {
@@ -314,6 +326,22 @@ const PostList = () => {
                 <MenuItem value="draft">Draft</MenuItem>
                 <MenuItem value="private">Private</MenuItem>
                 <MenuItem value="trash">Trash</MenuItem>
+              </Select>
+            </FormControl>
+            
+            <FormControl fullWidth>
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={filters.category_id}
+                label="Category"
+                onChange={(e) => setFilters({ ...filters, category_id: e.target.value })}
+              >
+                <MenuItem value="">All Categories</MenuItem>
+                {categories.map((category) => (
+                  <MenuItem key={category.id} value={category.id}>
+                    {category.name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Box>
