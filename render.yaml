@@ -3,16 +3,27 @@ services:
     name: nguyen-thanh-tai-blog
     env: python
     buildCommand: |
-      # Install Python dependencies only
-      cd cms-backend
+      # Install Python dependencies
+      cd cms-backend  
       pip install -r requirements.txt
-      # Static files should already be committed to repo
-      echo "=== Checking committed static files ==="
-      ls -la static/ || echo "No static directory in repo"
-      ls -la static/js/ || echo "No js directory in repo"
-      ls -la static/css/ || echo "No css directory in repo"
-      ls -la templates/ || echo "No templates directory in repo"
-      echo "=== Build complete - using committed static files ==="
+      # Build React frontend and copy files correctly
+      cd ../cms-frontend
+      npm install
+      npm run build
+      # Clean and prepare backend directories
+      cd ../cms-backend
+      rm -rf static/*
+      mkdir -p static/js static/css templates
+      # Copy files with correct structure
+      cp -r ../cms-frontend/build/static/js/* ./static/js/
+      cp -r ../cms-frontend/build/static/css/* ./static/css/
+      cp ../cms-frontend/build/index.html ./templates/
+      cp ../cms-frontend/build/manifest.json ./
+      # Verify structure
+      echo "=== Final structure ==="
+      ls -la static/
+      ls -la static/js/
+      ls -la static/css/
     startCommand: |
       cd cms-backend
       echo "=== Production startup debug ==="
