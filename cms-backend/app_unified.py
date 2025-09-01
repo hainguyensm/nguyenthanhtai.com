@@ -517,6 +517,65 @@ def serve_css(filename):
     
     return jsonify({'error': f'CSS file {filename} not found in any location', 'tried': possible_paths}), 404
 
+# Debug route for production database and file paths
+@app.route('/debug/paths')
+def debug_paths():
+    import os
+    import glob
+    
+    debug_info = {
+        'working_directory': os.getcwd(),
+        'app_root_path': app.root_path,
+        'database_config': app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set'),
+        'upload_folder': app.config.get('UPLOAD_FOLDER', 'Not set'),
+        'database_locations': {},
+        'uploads_locations': {},
+        'directory_contents': {}
+    }
+    
+    # Check for database files
+    possible_db_paths = [
+        'instance/cms.db',
+        'cms-backend/instance/cms.db', 
+        '../instance/cms.db',
+        '/opt/render/project/src/cms-backend/instance/cms.db',
+        '/tmp/cms.db'
+    ]
+    
+    for path in possible_db_paths:
+        full_path = os.path.abspath(path)
+        debug_info['database_locations'][path] = {
+            'absolute_path': full_path,
+            'exists': os.path.exists(full_path),
+            'size': os.path.getsize(full_path) if os.path.exists(full_path) else 'N/A'
+        }
+    
+    # Check for uploads directories
+    possible_uploads_paths = [
+        'uploads',
+        'cms-backend/uploads',
+        '../uploads',
+        '/opt/render/project/src/cms-backend/uploads'
+    ]
+    
+    for path in possible_uploads_paths:
+        full_path = os.path.abspath(path)
+        debug_info['uploads_locations'][path] = {
+            'absolute_path': full_path,
+            'exists': os.path.exists(full_path),
+            'is_dir': os.path.isdir(full_path) if os.path.exists(full_path) else False
+        }
+    
+    # List current directory contents
+    for check_dir in ['.', 'instance', 'cms-backend', 'cms-backend/instance']:
+        if os.path.exists(check_dir):
+            try:
+                debug_info['directory_contents'][check_dir] = os.listdir(check_dir)
+            except:
+                debug_info['directory_contents'][check_dir] = 'Error reading directory'
+    
+    return jsonify(debug_info)
+
 # Import routes to register them (after all local routes are defined)
 from routes import *
 

@@ -1004,34 +1004,57 @@ def create_backup():
             shutil.rmtree(backup_dir)
         os.makedirs(backup_dir)
         
-        # Copy database
-        db_path = os.path.join(os.getcwd(), 'instance', 'cms.db')
-        db_backed_up = False
+        # Copy database with improved path detection
+        def find_database():
+            possible_db_paths = [
+                os.path.join(os.getcwd(), 'instance', 'cms.db'),
+                os.path.join(os.path.dirname(__file__), 'instance', 'cms.db'),
+                os.path.join(os.getcwd(), 'cms-backend', 'instance', 'cms.db'),
+                os.path.join('/', 'opt', 'render', 'project', 'src', 'cms-backend', 'instance', 'cms.db'),
+                os.path.join(os.getcwd(), 'instance', 'blog.db'),  # Alternative name
+                '/tmp/cms.db'
+            ]
+            
+            for db_path in possible_db_paths:
+                if os.path.exists(db_path):
+                    return db_path
+            return None
         
-        if os.path.exists(db_path):
+        db_path = find_database()
+        if db_path:
             shutil.copy2(db_path, os.path.join(backup_dir, 'cms.db'))
             print(f"Backed up database from: {db_path}")
-            db_backed_up = True
         else:
-            # Try alternative location (blog.db)
-            alt_db_path = os.path.join(os.getcwd(), 'instance', 'blog.db')
-            if os.path.exists(alt_db_path):
-                shutil.copy2(alt_db_path, os.path.join(backup_dir, 'cms.db'))
-                print(f"Backed up database from: {alt_db_path}")
-                db_backed_up = True
+            print("Warning: No database found at any expected location")
+            # Create a note file instead of failing
+            with open(os.path.join(backup_dir, 'database_not_found.txt'), 'w') as f:
+                f.write("Database file not found during backup creation")
         
-        if not db_backed_up:
-            print(f"Warning: No database found at {db_path} or alternative locations")
+        # Copy uploads directory with improved path detection  
+        def find_uploads():
+            possible_uploads_paths = [
+                os.path.join(os.getcwd(), 'uploads'),
+                os.path.join(os.path.dirname(__file__), 'uploads'),
+                os.path.join(os.getcwd(), 'cms-backend', 'uploads'),
+                app.config.get('UPLOAD_FOLDER', ''),
+                os.path.join('/', 'opt', 'render', 'project', 'src', 'cms-backend', 'uploads')
+            ]
+            
+            for uploads_path in possible_uploads_paths:
+                if uploads_path and os.path.exists(uploads_path) and os.path.isdir(uploads_path):
+                    return uploads_path
+            return None
         
-        # Copy uploads directory
-        uploads_path = os.path.join(os.getcwd(), 'uploads')
-        if os.path.exists(uploads_path):
+        uploads_path = find_uploads()
+        if uploads_path:
             shutil.copytree(uploads_path, os.path.join(backup_dir, 'uploads'))
             print(f"Backed up uploads from: {uploads_path}")
         else:
-            print(f"Warning: No uploads directory found at {uploads_path}")
+            print("Warning: No uploads directory found at any expected location")
             # Create empty uploads directory in backup
             os.makedirs(os.path.join(backup_dir, 'uploads'), exist_ok=True)
+            with open(os.path.join(backup_dir, 'uploads', 'uploads_not_found.txt'), 'w') as f:
+                f.write("Uploads directory not found during backup creation")
         
         # Create ZIP file
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
