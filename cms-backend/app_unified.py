@@ -260,6 +260,12 @@ class Comment(db.Model):
         return {
             'id': self.id,
             'post_id': self.post_id,
+            'post': {
+                'id': self.post.id,
+                'title': self.post.title,
+                'slug': self.post.slug,
+                'status': self.post.status
+            } if self.post else None,
             'author_id': self.author_id,
             'author': self.author.to_dict() if self.author else None,
             'author_name': self.author_name,

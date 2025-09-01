@@ -116,6 +116,11 @@ class ApiService {
     await this.client.delete(`/users/${id}`);
   };
 
+  createUser = async (userData) => {
+    const response = await this.client.post('/users', userData);
+    return response.data;
+  };
+
   // Media endpoints
   getMedia = async (params = {}) => {
     const response = await this.client.get('/media', { params });
@@ -154,6 +159,11 @@ class ApiService {
 
   deleteComment = async (id) => {
     await this.client.delete(`/comments/${id}`);
+  };
+
+  getCommentStats = async () => {
+    const response = await this.client.get('/comments', { params: { per_page: 1 } });
+    return response.data.stats;
   };
 
   // Settings endpoints

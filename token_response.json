@@ -1,0 +1,18 @@
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc1NjcxNTY2NiwianRpIjoiNjJjNmI5YjctYjAzOC00OGZmLWJmNzUtMjQ4OTg5M2FlYjRjIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjEiLCJuYmYiOjE3NTY3MTU2NjYsImNzcmYiOiI2YzY4ODI3YS1iNWE5LTQ3MTgtOTUyMy1jMDdlM2Y3MmIzMTQiLCJleHAiOjE3NTY4MDIwNjZ9.4VfY1RaZnPmj7Ze4-DwZTfX0G6dC_nGgOh9Em8vf5bo",
+  "user": {
+    "avatar_url": null,
+    "bio": null,
+    "created_at": "2025-08-31T16:01:01.934689",
+    "email": "admin@cms.com",
+    "first_name": "System",
+    "id": 1,
+    "is_active": true,
+    "last_name": "Administrator",
+    "role": "admin",
+    "social_links": {},
+    "updated_at": "2025-08-31T16:01:01.934692",
+    "username": "admin",
+    "website": null
+  }
+}

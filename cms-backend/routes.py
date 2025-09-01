@@ -84,6 +84,56 @@ def get_users():
         'current_page': page
     })
 
+@app.route('/api/users', methods=['POST'])
+@jwt_required()
+@role_required(['admin'])
+def create_user():
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['username', 'email', 'password', 'first_name', 'last_name', 'role']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'{field} is required'}), 400
+        
+        # Check if username already exists
+        if User.query.filter_by(username=data['username']).first():
+            return jsonify({'error': 'Username already exists'}), 400
+        
+        # Check if email already exists
+        if User.query.filter_by(email=data['email']).first():
+            return jsonify({'error': 'Email already exists'}), 400
+        
+        # Validate role
+        valid_roles = ['admin', 'editor', 'author', 'subscriber']
+        if data['role'] not in valid_roles:
+            return jsonify({'error': f'Invalid role. Must be one of: {", ".join(valid_roles)}'}), 400
+        
+        # Create new user
+        user = User(
+            username=data['username'],
+            email=data['email'],
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            role=data['role'],
+            bio=data.get('bio', ''),
+            website=data.get('website', ''),
+            avatar_url=data.get('avatar_url', ''),
+            is_active=data.get('is_active', True),
+            social_links=json.dumps(data.get('social_links', {}))
+        )
+        user.set_password(data['password'])
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        return jsonify(user.to_dict()), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/users/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user(user_id):
@@ -582,6 +632,180 @@ def add_post_comment(slug):
     db.session.commit()
     
     return jsonify(comment.to_dict()), 201
+
+# Admin Comments Management
+@app.route('/api/comments', methods=['GET'])
+@jwt_required()
+@role_required(['admin', 'editor'])
+def get_all_comments():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        status = request.args.get('status', 'all')
+        search = request.args.get('search', '')
+        
+        # Base query
+        query = Comment.query
+        
+        # Filter by status
+        if status != 'all':
+            query = query.filter(Comment.status == status)
+        
+        # Search filter
+        if search:
+            query = query.filter(
+                db.or_(
+                    Comment.author_name.ilike(f'%{search}%'),
+                    Comment.author_email.ilike(f'%{search}%'),
+                    Comment.content.ilike(f'%{search}%')
+                )
+            )
+        
+        # Order by created_at desc
+        query = query.order_by(Comment.created_at.desc())
+        
+        # Paginate
+        comments = query.paginate(
+            page=page, 
+            per_page=per_page, 
+            error_out=False
+        )
+        
+        # Get stats
+        stats = {
+            'total': Comment.query.count(),
+            'pending': Comment.query.filter(Comment.status == 'pending').count(),
+            'approved': Comment.query.filter(Comment.status == 'approved').count(),
+            'spam': Comment.query.filter(Comment.status == 'spam').count(),
+            'trash': Comment.query.filter(Comment.status == 'trash').count(),
+        }
+        
+        return jsonify({
+            'comments': [comment.to_dict() for comment in comments.items],
+            'current_page': comments.page,
+            'pages': comments.pages,
+            'total': comments.total,
+            'per_page': per_page,
+            'stats': stats
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/comments/<int:comment_id>', methods=['PUT'])
+@jwt_required()
+@role_required(['admin', 'editor'])
+def update_comment_admin(comment_id):
+    try:
+        comment = Comment.query.get_or_404(comment_id)
+        data = request.get_json()
+        
+        # Update allowed fields
+        if 'status' in data:
+            comment.status = data['status']
+        if 'content' in data:
+            comment.content = data['content']
+        if 'author_name' in data:
+            comment.author_name = data['author_name']
+        if 'author_email' in data:
+            comment.author_email = data['author_email']
+        if 'author_website' in data:
+            comment.author_website = data['author_website']
+        
+        db.session.commit()
+        return jsonify(comment.to_dict())
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/comments/<int:comment_id>', methods=['DELETE'])
+@jwt_required()
+@role_required(['admin', 'editor'])
+def delete_comment_admin(comment_id):
+    try:
+        comment = Comment.query.get_or_404(comment_id)
+        
+        # Delete all replies first
+        Comment.query.filter(Comment.parent_id == comment_id).delete()
+        
+        # Delete the comment
+        db.session.delete(comment)
+        db.session.commit()
+        
+        return jsonify({'message': 'Comment deleted successfully'})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/comments/bulk', methods=['POST'])
+@jwt_required()
+@role_required(['admin', 'editor'])
+def bulk_comment_action():
+    try:
+        data = request.get_json()
+        comment_ids = data.get('comment_ids', [])
+        action = data.get('action')
+        
+        if not comment_ids or not action:
+            return jsonify({'error': 'Comment IDs and action are required'}), 400
+        
+        comments = Comment.query.filter(Comment.id.in_(comment_ids)).all()
+        
+        if action == 'approve':
+            for comment in comments:
+                comment.status = 'approved'
+        elif action == 'spam':
+            for comment in comments:
+                comment.status = 'spam'
+        elif action == 'trash':
+            for comment in comments:
+                comment.status = 'trash'
+        elif action == 'delete':
+            # Delete replies first
+            Comment.query.filter(Comment.parent_id.in_(comment_ids)).delete()
+            # Delete comments
+            Comment.query.filter(Comment.id.in_(comment_ids)).delete()
+        else:
+            return jsonify({'error': 'Invalid action'}), 400
+        
+        db.session.commit()
+        return jsonify({'message': f'Bulk action {action} completed successfully'})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/comments/<int:comment_id>/reply', methods=['POST'])
+@jwt_required()
+@role_required(['admin', 'editor', 'author'])
+def reply_to_comment(comment_id):
+    try:
+        parent_comment = Comment.query.get_or_404(comment_id)
+        current_user_id = get_jwt_identity()
+        current_user = User.query.get(current_user_id)
+        
+        data = request.get_json()
+        content = data.get('content', '').strip()
+        
+        if not content:
+            return jsonify({'error': 'Content is required'}), 400
+        
+        reply = Comment(
+            post_id=parent_comment.post_id,
+            author_id=int(current_user_id),
+            author_name=f"{current_user.first_name} {current_user.last_name}",
+            author_email=current_user.email,
+            content=content,
+            status='approved',  # Admin replies are auto-approved
+            parent_id=comment_id
+        )
+        
+        db.session.add(reply)
+        db.session.commit()
+        
+        return jsonify(reply.to_dict()), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # File serving
 @app.route('/uploads/<path:filename>')

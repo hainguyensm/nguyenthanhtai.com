@@ -21,6 +21,9 @@ import {
   CircularProgress,
   Alert,
   Divider,
+  Card,
+  CardMedia,
+  IconButton,
 } from '@mui/material';
 import {
   Save,
@@ -28,6 +31,8 @@ import {
   Preview,
   ExpandMore,
   Image as ImageIcon,
+  Delete,
+  Edit,
 } from '@mui/icons-material';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -35,6 +40,7 @@ import { useForm, Controller } from 'react-hook-form';
 import slugify from 'slugify';
 import apiService from '../../services/api';
 import toast from 'react-hot-toast';
+import MediaLibraryPicker from '../../components/MediaLibraryPicker';
 
 const PostEditor = () => {
   const [loading, setLoading] = useState(false);
@@ -44,6 +50,8 @@ const PostEditor = () => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [error, setError] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [selectedFeaturedImage, setSelectedFeaturedImage] = useState(null);
 
   const { id } = useParams();
   const isEditing = !!id;
@@ -132,6 +140,19 @@ const PostEditor = () => {
       });
       
       setSelectedTags(post.tags.map(tag => tag.name));
+      
+      // If post has featured image, try to find it in media library
+      if (post.featured_image) {
+        try {
+          const media = await apiService.getMedia();
+          const featuredMedia = media.find(m => m.url === post.featured_image);
+          if (featuredMedia) {
+            setSelectedFeaturedImage(featuredMedia);
+          }
+        } catch (error) {
+          console.error('Failed to load featured image from media library:', error);
+        }
+      }
     } catch (error) {
       setError('Failed to load post');
     } finally {
@@ -179,6 +200,16 @@ const PostEditor = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleMediaSelect = (media) => {
+    setSelectedFeaturedImage(media);
+    setValue('featured_image', media.url);
+  };
+
+  const handleRemoveFeaturedImage = () => {
+    setSelectedFeaturedImage(null);
+    setValue('featured_image', '');
   };
 
   const modules = {
@@ -446,24 +477,84 @@ const PostEditor = () => {
                 Featured Image
               </Typography>
               <Divider sx={{ mb: 2 }} />
-              <TextField
-                fullWidth
-                label="Image URL"
-                {...register('featured_image')}
-                sx={{ mb: 2 }}
-              />
-              <Button
-                variant="outlined"
-                startIcon={<ImageIcon />}
-                fullWidth
-                onClick={() => navigate('/admin/media')}
-              >
-                Choose from Media
-              </Button>
+              
+              {selectedFeaturedImage ? (
+                <Box>
+                  <Card sx={{ mb: 2 }}>
+                    <CardMedia
+                      component="img"
+                      height="160"
+                      image={selectedFeaturedImage.url}
+                      alt={selectedFeaturedImage.alt_text || selectedFeaturedImage.title}
+                      sx={{ objectFit: 'cover' }}
+                    />
+                    <Box sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="textSecondary">
+                        {selectedFeaturedImage.title}
+                      </Typography>
+                      <Box>
+                        <IconButton 
+                          size="small" 
+                          onClick={() => setMediaPickerOpen(true)}
+                          color="primary"
+                        >
+                          <Edit />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          onClick={handleRemoveFeaturedImage}
+                          color="error"
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  </Card>
+                </Box>
+              ) : (
+                <Box>
+                  <Button
+                    variant="outlined"
+                    startIcon={<ImageIcon />}
+                    fullWidth
+                    onClick={() => setMediaPickerOpen(true)}
+                    sx={{ mb: 2 }}
+                  >
+                    Choose from Media Library
+                  </Button>
+                  
+                  {/* Fallback URL input for external images */}
+                  <Typography variant="caption" color="textSecondary" gutterBottom display="block">
+                    Or enter external image URL:
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Image URL"
+                    {...register('featured_image')}
+                    onChange={(e) => {
+                      // Clear selected media if URL is manually entered
+                      if (e.target.value && selectedFeaturedImage) {
+                        setSelectedFeaturedImage(null);
+                      }
+                    }}
+                  />
+                </Box>
+              )}
             </Paper>
           </Grid>
         </Grid>
       </form>
+
+      {/* Media Library Picker */}
+      <MediaLibraryPicker
+        open={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        onSelect={handleMediaSelect}
+        selectedMedia={selectedFeaturedImage}
+        allowedTypes={['image']}
+        title="Select Featured Image"
+      />
     </Box>
   );
 };
