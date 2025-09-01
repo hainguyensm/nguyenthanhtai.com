@@ -473,6 +473,39 @@ def get_dashboard_stats():
     }
     return jsonify(stats)
 
+# Comments Routes
+@app.route('/api/posts/<slug>/comments', methods=['GET'])
+def get_post_comments(slug):
+    post = Post.query.filter_by(slug=slug).first()
+    if not post:
+        return jsonify({'error': 'Post not found'}), 404
+    
+    comments = Comment.query.filter_by(post_id=post.id, status='approved').order_by(Comment.created_at.desc()).all()
+    return jsonify([comment.to_dict() for comment in comments])
+
+@app.route('/api/posts/<slug>/comments', methods=['POST'])
+def add_post_comment(slug):
+    post = Post.query.filter_by(slug=slug).first()
+    if not post:
+        return jsonify({'error': 'Post not found'}), 404
+    
+    data = request.get_json()
+    if not data or not data.get('content'):
+        return jsonify({'error': 'Comment content is required'}), 400
+    
+    comment = Comment(
+        post_id=post.id,
+        author_name=data.get('name', 'Anonymous'),
+        author_email=data.get('email', ''),
+        content=data['content'],
+        status='approved'  # Auto-approve for now, can be changed to 'pending' for moderation
+    )
+    
+    db.session.add(comment)
+    db.session.commit()
+    
+    return jsonify(comment.to_dict()), 201
+
 # File serving
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):

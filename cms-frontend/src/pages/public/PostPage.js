@@ -13,8 +13,28 @@ import {
   Avatar,
   Grid,
   Paper,
+  IconButton,
+  Button,
+  TextField,
+  Card,
+  CardContent,
+  Tooltip,
 } from '@mui/material';
-import { Home, Article, Category, ChevronRight } from '@mui/icons-material';
+import {
+  Home,
+  Article,
+  Category,
+  ChevronRight,
+  Favorite,
+  FavoriteBorder,
+  Share,
+  Facebook,
+  Twitter,
+  LinkedIn,
+  Link as LinkIcon,
+  Send,
+  Person,
+} from '@mui/icons-material';
 import { format } from 'date-fns';
 import apiService from '../../services/api';
 import getCategoryColor from '../../utils/categoryColors';
@@ -25,12 +45,24 @@ const PostPage = () => {
   const [recentPosts, setRecentPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState({ name: '', email: '', content: '' });
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [showShareTooltip, setShowShareTooltip] = useState(false);
   const { slug } = useParams();
 
   useEffect(() => {
     fetchPost();
     fetchCategories();
     fetchRecentPosts();
+    fetchComments();
+    // Check if user has liked this post (from localStorage)
+    const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+    if (likedPosts.includes(slug)) {
+      setLiked(true);
+    }
   }, [slug]);
 
   const fetchPost = async () => {
@@ -38,6 +70,8 @@ const PostPage = () => {
       setLoading(true);
       const postData = await apiService.getPost(slug);
       setPost(postData);
+      // Initialize like count from view_count or a default
+      setLikeCount(postData.view_count || 0);
     } catch (error) {
       console.error('Failed to fetch post:', error);
       setError('Post not found');
@@ -66,6 +100,74 @@ const PostPage = () => {
       setRecentPosts(response.posts || []);
     } catch (error) {
       console.error('Failed to fetch recent posts:', error);
+    }
+  };
+
+  const fetchComments = async () => {
+    try {
+      const response = await apiService.getPostComments(slug);
+      setComments(response || []);
+    } catch (error) {
+      console.error('Failed to fetch comments:', error);
+    }
+  };
+
+  const handleLike = () => {
+    const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+    if (liked) {
+      // Unlike
+      const index = likedPosts.indexOf(slug);
+      if (index > -1) {
+        likedPosts.splice(index, 1);
+      }
+      setLikeCount(prev => Math.max(0, prev - 1));
+    } else {
+      // Like
+      likedPosts.push(slug);
+      setLikeCount(prev => prev + 1);
+    }
+    localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
+    setLiked(!liked);
+  };
+
+  const handleShare = (platform) => {
+    const url = window.location.href;
+    const title = post?.title || '';
+    const text = post?.excerpt || '';
+
+    switch (platform) {
+      case 'facebook':
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+        break;
+      case 'twitter':
+        window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
+        break;
+      case 'linkedin':
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+        break;
+      case 'copy':
+        navigator.clipboard.writeText(url);
+        setShowShareTooltip(true);
+        setTimeout(() => setShowShareTooltip(false), 2000);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!newComment.content.trim()) return;
+
+    setSubmittingComment(true);
+    try {
+      const comment = await apiService.addComment(slug, newComment);
+      setComments([comment, ...comments]);
+      setNewComment({ name: '', email: '', content: '' });
+    } catch (error) {
+      console.error('Failed to submit comment:', error);
+    } finally {
+      setSubmittingComment(false);
     }
   };
 
@@ -278,6 +380,169 @@ const PostPage = () => {
               ))}
             </Box>
           )}
+        </Box>
+
+        {/* Social Actions Section */}
+        <Paper elevation={1} sx={{ p: 3, mt: 4, backgroundColor: '#f8f9fa' }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+            {/* Like Button */}
+            <Box display="flex" alignItems="center" gap={1}>
+              <IconButton 
+                onClick={handleLike}
+                color={liked ? "error" : "default"}
+                sx={{ 
+                  transition: 'all 0.3s',
+                  '&:hover': { transform: 'scale(1.1)' }
+                }}
+              >
+                {liked ? <Favorite /> : <FavoriteBorder />}
+              </IconButton>
+              <Typography variant="body2" color="text.secondary">
+                {likeCount} {likeCount === 1 ? 'Like' : 'Likes'}
+              </Typography>
+            </Box>
+
+            {/* Share Buttons */}
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                Share:
+              </Typography>
+              <IconButton 
+                size="small"
+                onClick={() => handleShare('facebook')}
+                sx={{ color: '#1877f2' }}
+              >
+                <Facebook />
+              </IconButton>
+              <IconButton 
+                size="small"
+                onClick={() => handleShare('twitter')}
+                sx={{ color: '#1da1f2' }}
+              >
+                <Twitter />
+              </IconButton>
+              <IconButton 
+                size="small"
+                onClick={() => handleShare('linkedin')}
+                sx={{ color: '#0077b5' }}
+              >
+                <LinkedIn />
+              </IconButton>
+              <Tooltip title={showShareTooltip ? "Link copied!" : "Copy link"} arrow>
+                <IconButton 
+                  size="small"
+                  onClick={() => handleShare('copy')}
+                >
+                  <LinkIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Box>
+        </Paper>
+
+        {/* Comments Section */}
+        <Box sx={{ mt: 6 }}>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
+            Comments ({comments.length})
+          </Typography>
+
+          {/* Comment Form */}
+          <Card sx={{ mb: 4, backgroundColor: '#f8f9fa' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Leave a Comment
+              </Typography>
+              <Box component="form" onSubmit={handleCommentSubmit}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Name"
+                      variant="outlined"
+                      value={newComment.name}
+                      onChange={(e) => setNewComment({ ...newComment, name: e.target.value })}
+                      required
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Email"
+                      type="email"
+                      variant="outlined"
+                      value={newComment.email}
+                      onChange={(e) => setNewComment({ ...newComment, email: e.target.value })}
+                      required
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Your Comment"
+                      variant="outlined"
+                      multiline
+                      rows={4}
+                      value={newComment.content}
+                      onChange={(e) => setNewComment({ ...newComment, content: e.target.value })}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      startIcon={<Send />}
+                      disabled={submittingComment}
+                    >
+                      {submittingComment ? 'Submitting...' : 'Post Comment'}
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Comments List */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {comments.length > 0 ? (
+              comments.map((comment) => (
+                <Card key={comment.id || Math.random()} variant="outlined">
+                  <CardContent>
+                    <Box display="flex" alignItems="flex-start" gap={2}>
+                      <Avatar sx={{ bgcolor: 'primary.main' }}>
+                        <Person />
+                      </Avatar>
+                      <Box flex={1}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                          <Box>
+                            <Typography variant="subtitle2" fontWeight={600}>
+                              {comment.author_name || comment.name || 'Anonymous'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {comment.created_at ? format(new Date(comment.created_at), 'MMM dd, yyyy at h:mm a') : 'Just now'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Typography variant="body2" color="text.primary">
+                          {comment.content}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography variant="body2" color="text.secondary" textAlign="center">
+                    No comments yet. Be the first to comment!
+                  </Typography>
+                </CardContent>
+              </Card>
+            )}
+          </Box>
         </Box>
           </Grid>
 

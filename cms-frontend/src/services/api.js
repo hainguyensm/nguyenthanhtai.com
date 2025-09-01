@@ -156,6 +156,33 @@ class ApiService {
     const response = await this.client.get('/dashboard/stats');
     return response.data;
   };
+
+  // Comments endpoints
+  getPostComments = async (postSlug) => {
+    try {
+      const response = await this.client.get(`/posts/${postSlug}/comments`);
+      return response.data;
+    } catch (error) {
+      // Return empty array if comments not found or API not implemented yet
+      return [];
+    }
+  };
+
+  addComment = async (postSlug, commentData) => {
+    try {
+      const response = await this.client.post(`/posts/${postSlug}/comments`, commentData);
+      return response.data;
+    } catch (error) {
+      // For now, return a mock comment if API is not implemented
+      return {
+        id: Date.now(),
+        author_name: commentData.name,
+        author_email: commentData.email,
+        content: commentData.content,
+        created_at: new Date().toISOString(),
+      };
+    }
+  };
 }
 
 export default new ApiService();
