@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__, static_folder='static', static_url_path='')
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 # Configuration
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -406,6 +406,7 @@ def create_tables():
 def serve_manifest():
     """Serve manifest files"""
     filename = request.path[1:]  # Remove leading slash
+    # Manifest files are in the parent static directory
     return send_from_directory(os.path.join(app.root_path, 'static'), filename)
 
 # Serve React App - this catches all routes not handled by the API
