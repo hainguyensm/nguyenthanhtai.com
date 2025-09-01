@@ -935,6 +935,164 @@ def update_theme_settings(theme_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Backup & Restore Routes
+@app.route('/api/admin/backup', methods=['POST'])
+@jwt_required()
+@role_required(['admin'])
+def create_backup():
+    """Create a backup of the database and media files"""
+    import zipfile
+    import shutil
+    from datetime import datetime
+    
+    try:
+        # Create backup directory
+        backup_dir = 'backup_temp'
+        if os.path.exists(backup_dir):
+            shutil.rmtree(backup_dir)
+        os.makedirs(backup_dir)
+        
+        # Copy database
+        db_path = os.path.join(os.getcwd(), 'instance', 'cms.db')
+        db_backed_up = False
+        
+        if os.path.exists(db_path):
+            shutil.copy2(db_path, os.path.join(backup_dir, 'cms.db'))
+            print(f"Backed up database from: {db_path}")
+            db_backed_up = True
+        else:
+            # Try alternative location (blog.db)
+            alt_db_path = os.path.join(os.getcwd(), 'instance', 'blog.db')
+            if os.path.exists(alt_db_path):
+                shutil.copy2(alt_db_path, os.path.join(backup_dir, 'cms.db'))
+                print(f"Backed up database from: {alt_db_path}")
+                db_backed_up = True
+        
+        if not db_backed_up:
+            print(f"Warning: No database found at {db_path} or alternative locations")
+        
+        # Copy uploads directory
+        uploads_path = os.path.join(os.getcwd(), 'uploads')
+        if os.path.exists(uploads_path):
+            shutil.copytree(uploads_path, os.path.join(backup_dir, 'uploads'))
+            print(f"Backed up uploads from: {uploads_path}")
+        else:
+            print(f"Warning: No uploads directory found at {uploads_path}")
+            # Create empty uploads directory in backup
+            os.makedirs(os.path.join(backup_dir, 'uploads'), exist_ok=True)
+        
+        # Create ZIP file
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        zip_filename = f'cms_backup_{timestamp}.zip'
+        zip_path = os.path.join('backups', zip_filename)
+        
+        # Ensure backups directory exists
+        os.makedirs('backups', exist_ok=True)
+        
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(backup_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arc_path = os.path.relpath(file_path, backup_dir)
+                    zipf.write(file_path, arc_path)
+        
+        # Cleanup temp directory
+        shutil.rmtree(backup_dir)
+        
+        # Send the zip file
+        return send_file(zip_path, as_attachment=True, download_name=zip_filename)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/restore', methods=['POST'])
+@jwt_required()
+@role_required(['admin'])
+def restore_backup():
+    """Restore database and media files from backup ZIP"""
+    import zipfile
+    import shutil
+    from datetime import datetime
+    
+    try:
+        if 'backup' not in request.files:
+            return jsonify({'error': 'No backup file provided'}), 400
+        
+        file = request.files['backup']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if not file.filename.endswith('.zip'):
+            return jsonify({'error': 'File must be a ZIP archive'}), 400
+        
+        # Save uploaded file
+        temp_filename = f'temp_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.zip'
+        temp_path = os.path.join('temp', temp_filename)
+        os.makedirs('temp', exist_ok=True)
+        file.save(temp_path)
+        
+        # Extract ZIP file
+        extract_dir = 'restore_temp'
+        if os.path.exists(extract_dir):
+            shutil.rmtree(extract_dir)
+        os.makedirs(extract_dir)
+        
+        with zipfile.ZipFile(temp_path, 'r') as zipf:
+            zipf.extractall(extract_dir)
+        
+        # Backup current database (just in case)
+        current_db = os.path.join(os.getcwd(), 'instance', 'cms.db')
+        alt_current_db = os.path.join(os.getcwd(), 'instance', 'blog.db')
+        
+        # Find which database exists and back it up
+        db_to_backup = None
+        if os.path.exists(current_db):
+            db_to_backup = current_db
+        elif os.path.exists(alt_current_db):
+            db_to_backup = alt_current_db
+            current_db = alt_current_db  # Update current_db path for restore
+        
+        if db_to_backup:
+            backup_current_db = os.path.join('backups', f'pre_restore_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.db')
+            os.makedirs('backups', exist_ok=True)
+            shutil.copy2(db_to_backup, backup_current_db)
+        
+        # Restore database
+        restored_db = os.path.join(extract_dir, 'cms.db')
+        if os.path.exists(restored_db):
+            os.makedirs('instance', exist_ok=True)
+            # Always restore as cms.db (the correct filename)
+            target_db = os.path.join(os.getcwd(), 'instance', 'cms.db')
+            shutil.copy2(restored_db, target_db)
+            print(f"Restored database to: {target_db}")
+        else:
+            print(f"Warning: No cms.db found in backup archive")
+        
+        # Restore uploads
+        restored_uploads = os.path.join(extract_dir, 'uploads')
+        current_uploads = os.path.join(os.getcwd(), 'uploads')
+        if os.path.exists(restored_uploads):
+            if os.path.exists(current_uploads):
+                # Backup current uploads
+                backup_uploads = os.path.join('backups', f'uploads_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}')
+                shutil.move(current_uploads, backup_uploads)
+                print(f"Backed up existing uploads to: {backup_uploads}")
+            shutil.copytree(restored_uploads, current_uploads)
+            print(f"Restored uploads to: {current_uploads}")
+        else:
+            print(f"Warning: No uploads directory found in backup archive")
+            # Ensure uploads directory exists
+            os.makedirs(current_uploads, exist_ok=True)
+        
+        # Cleanup
+        os.remove(temp_path)
+        shutil.rmtree(extract_dir)
+        
+        return jsonify({'message': 'Backup restored successfully'})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # File serving
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):

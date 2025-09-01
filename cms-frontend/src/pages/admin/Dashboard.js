@@ -22,6 +22,9 @@ import {
   Photo,
   TrendingUp,
   CloudDownload,
+  CloudUpload,
+  Backup,
+  Restore,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import apiService from '../../services/api';
@@ -51,6 +54,8 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -69,17 +74,18 @@ const Dashboard = () => {
     }
   };
 
-  const handleDownloadDatabase = async () => {
+  const handleCreateBackup = async () => {
     try {
-      const response = await fetch('/api/admin/download-database', {
-        method: 'GET',
+      setBackupLoading(true);
+      const response = await fetch('/api/admin/backup', {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to download database');
+        throw new Error('Failed to create backup');
       }
 
       // Create blob from response
@@ -89,17 +95,66 @@ const Dashboard = () => {
       // Create download link
       const link = document.createElement('a');
       link.href = url;
-      link.download = `cms-backup-${new Date().toISOString().split('T')[0]}.db`;
+      link.download = `cms-backup-${new Date().toISOString().split('T')[0]}.zip`;
       document.body.appendChild(link);
       link.click();
       
       // Cleanup
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      
+      alert('Backup created and downloaded successfully!');
     } catch (error) {
-      console.error('Failed to download database:', error);
-      alert('Failed to download database backup');
+      console.error('Failed to create backup:', error);
+      alert('Failed to create backup: ' + error.message);
+    } finally {
+      setBackupLoading(false);
     }
+  };
+
+  const handleRestoreBackup = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.zip';
+    input.onchange = async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (file.name.endsWith('.zip')) {
+        if (window.confirm('Are you sure you want to restore from this backup? This will replace all current data and media files. This action cannot be undone.')) {
+          try {
+            setRestoreLoading(true);
+            
+            const formData = new FormData();
+            formData.append('backup', file);
+            
+            const response = await fetch('/api/admin/restore', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              },
+              body: formData,
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to restore backup');
+            }
+
+            alert('Backup restored successfully! The page will reload.');
+            window.location.reload();
+          } catch (error) {
+            console.error('Failed to restore backup:', error);
+            alert('Failed to restore backup: ' + error.message);
+          } finally {
+            setRestoreLoading(false);
+          }
+        }
+      } else {
+        alert('Please select a valid backup ZIP file.');
+      }
+    };
+    input.click();
   };
 
   const getStatusColor = (status) => {
@@ -346,17 +401,41 @@ const Dashboard = () => {
               <Grid item>
                 <Card 
                   sx={{ 
-                    cursor: 'pointer', 
-                    '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },
+                    cursor: backupLoading ? 'not-allowed' : 'pointer', 
+                    opacity: backupLoading ? 0.7 : 1,
+                    '&:hover': !backupLoading && { transform: 'translateY(-2px)', boxShadow: 4 },
                     transition: 'all 0.2s'
                   }}
-                  onClick={handleDownloadDatabase}
+                  onClick={!backupLoading ? handleCreateBackup : undefined}
                 >
                   <CardContent sx={{ textAlign: 'center' }}>
-                    <CloudDownload sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
-                    <Typography variant="h6">Download Backup</Typography>
+                    <Backup sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
+                    <Typography variant="h6">
+                      {backupLoading ? 'Creating Backup...' : 'Create Backup'}
+                    </Typography>
                     <Typography variant="body2" color="textSecondary">
-                      Download database backup file
+                      Backup database and media files
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item>
+                <Card 
+                  sx={{ 
+                    cursor: restoreLoading ? 'not-allowed' : 'pointer', 
+                    opacity: restoreLoading ? 0.7 : 1,
+                    '&:hover': !restoreLoading && { transform: 'translateY(-2px)', boxShadow: 4 },
+                    transition: 'all 0.2s'
+                  }}
+                  onClick={!restoreLoading ? handleRestoreBackup : undefined}
+                >
+                  <CardContent sx={{ textAlign: 'center' }}>
+                    <Restore sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
+                    <Typography variant="h6">
+                      {restoreLoading ? 'Restoring...' : 'Restore Backup'}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Restore from backup ZIP file
                     </Typography>
                   </CardContent>
                 </Card>
