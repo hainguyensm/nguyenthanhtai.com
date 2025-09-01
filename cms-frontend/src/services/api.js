@@ -166,6 +166,11 @@ class ApiService {
     return response.data.stats;
   };
 
+  getPostsList = async () => {
+    const response = await this.client.get('/posts/list');
+    return response.data;
+  };
+
   // Settings endpoints
   getSettings = async () => {
     const response = await this.client.get('/settings');
@@ -180,6 +185,22 @@ class ApiService {
   // Dashboard endpoints
   getDashboardStats = async () => {
     const response = await this.client.get('/dashboard/stats');
+    return response.data;
+  };
+
+  // Themes endpoints
+  getActiveTheme = async () => {
+    const response = await this.client.get('/themes/active');
+    return response.data;
+  };
+
+  activateTheme = async (themeId) => {
+    const response = await this.client.post('/themes/activate', { theme_id: themeId });
+    return response.data;
+  };
+
+  updateThemeSettings = async (themeId, settings) => {
+    const response = await this.client.put(`/themes/${themeId}/settings`, settings);
     return response.data;
   };
 

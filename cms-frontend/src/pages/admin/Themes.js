@@ -35,15 +35,17 @@ import {
 } from '@mui/icons-material';
 import apiService from '../../services/api';
 import toast from 'react-hot-toast';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const Themes = () => {
+  const { switchTheme, fetchActiveTheme } = useTheme();
   const [activeTheme, setActiveTheme] = useState('default');
   const [themes] = useState([
     {
       id: 'default',
       name: 'Default Theme',
       description: 'Clean and modern default theme',
-      thumbnail: 'https://via.placeholder.com/300x200?text=Default+Theme',
+      thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSJsaW5lYXItZ3JhZGllbnQoMTM1ZGVnLCAjNjY3ZWVhIDAlLCAjNzY0YmE3IDEwMCUpIi8+Cjx0ZXh0IHg9IjE1MCIgeT0iMTA1IiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmb250LXdlaWdodD0iYm9sZCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+RGVmYXVsdCBUaGVtZTwvdGV4dD4KPC9zdmc+',
       author: 'CMS Team',
       version: '1.0.0',
       active: true,
@@ -52,7 +54,7 @@ const Themes = () => {
       id: 'dark',
       name: 'Dark Theme',
       description: 'Elegant dark theme for better readability',
-      thumbnail: 'https://via.placeholder.com/300x200?text=Dark+Theme',
+      thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSJsaW5lYXItZ3JhZGllbnQoMTM1ZGVnLCAjMWYyOTM3IDAlLCAjMzc0MTUxIDEwMCUpIi8+Cjx0ZXh0IHg9IjE1MCIgeT0iMTA1IiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmb250LXdlaWdodD0iYm9sZCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+RGFyayBUaGVtZTwvdGV4dD4KPC9zdmc+',
       author: 'CMS Team',
       version: '1.0.0',
       active: false,
@@ -61,7 +63,7 @@ const Themes = () => {
       id: 'minimal',
       name: 'Minimal Theme',
       description: 'Simple and minimalistic design',
-      thumbnail: 'https://via.placeholder.com/300x200?text=Minimal+Theme',
+      thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSJsaW5lYXItZ3JhZGllbnQoMTM1ZGVnLCAjZjNmNGY2IDAlLCAjZTVlN2ViIDEwMCUpIi8+Cjx0ZXh0IHg9IjE1MCIgeT0iMTA1IiBmaWxsPSIjMzc0MTUxIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiIGZvbnQtd2VpZ2h0PSJib2xkIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5NaW5pbWFsIFRoZW1lPC90ZXh0Pgo8L3N2Zz4=',
       author: 'CMS Team',
       version: '1.0.0',
       active: false,
@@ -70,7 +72,7 @@ const Themes = () => {
       id: 'blog',
       name: 'Blog Theme',
       description: 'Perfect for blogging and content sites',
-      thumbnail: 'https://via.placeholder.com/300x200?text=Blog+Theme',
+      thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSJsaW5lYXItZ3JhZGllbnQoMTM1ZGVnLCAjZWQ2NDAwIDAlLCAjZmZiMDAwIDEwMCUpIi8+Cjx0ZXh0IHg9IjE1MCIgeT0iMTA1IiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmb250LXdlaWdodD0iYm9sZCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QmxvZyBUaGVtZTwvdGV4dD4KPC9zdmc+',
       author: 'CMS Team',
       version: '1.0.0',
       active: false,
@@ -107,6 +109,8 @@ const Themes = () => {
     try {
       await apiService.activateTheme(themeId);
       setActiveTheme(themeId);
+      switchTheme(themeId); // Update the theme context
+      await fetchActiveTheme(); // Refetch theme settings
       toast.success('Theme activated successfully');
     } catch (error) {
       toast.error('Failed to activate theme');

@@ -643,6 +643,7 @@ def get_all_comments():
         per_page = request.args.get('per_page', 10, type=int)
         status = request.args.get('status', 'all')
         search = request.args.get('search', '')
+        post_id = request.args.get('post_id', type=int)
         
         # Base query
         query = Comment.query
@@ -650,6 +651,10 @@ def get_all_comments():
         # Filter by status
         if status != 'all':
             query = query.filter(Comment.status == status)
+        
+        # Filter by post
+        if post_id:
+            query = query.filter(Comment.post_id == post_id)
         
         # Search filter
         if search:
@@ -803,6 +808,129 @@ def reply_to_comment(comment_id):
         db.session.commit()
         
         return jsonify(reply.to_dict()), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/posts/list', methods=['GET'])
+@jwt_required()
+@role_required(['admin', 'editor'])
+def get_posts_list():
+    """Get a simple list of posts for dropdowns/filters"""
+    try:
+        # Only get posts that have comments
+        posts_with_comments = db.session.query(Post).join(Comment).distinct().all()
+        
+        posts_list = [
+            {
+                'id': post.id,
+                'title': post.title,
+                'slug': post.slug,
+                'comment_count': Comment.query.filter_by(post_id=post.id).count()
+            }
+            for post in posts_with_comments
+        ]
+        
+        # Sort by comment count descending
+        posts_list.sort(key=lambda x: x['comment_count'], reverse=True)
+        
+        return jsonify(posts_list)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Theme Routes
+@app.route('/api/themes/active', methods=['GET'])
+def get_active_theme():
+    """Get the currently active theme"""
+    try:
+        active_theme = Theme.query.filter_by(is_active=True).first()
+        
+        if not active_theme:
+            # Return default theme if none is active
+            return jsonify({
+                'slug': 'default',
+                'name': 'Default Theme',
+                'settings': {}
+            })
+        
+        settings = {}
+        if active_theme.settings:
+            try:
+                settings = json.loads(active_theme.settings)
+            except:
+                settings = {}
+        
+        return jsonify({
+            'slug': active_theme.slug,
+            'name': active_theme.name,
+            'settings': settings
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/themes/activate', methods=['POST'])
+@jwt_required()
+@role_required(['admin'])
+def activate_theme():
+    """Activate a theme"""
+    try:
+        data = request.get_json()
+        theme_id = data.get('theme_id')
+        
+        if not theme_id:
+            return jsonify({'error': 'Theme ID is required'}), 400
+        
+        # Deactivate all themes first
+        Theme.query.update({'is_active': False})
+        
+        # Check if theme exists in database, if not create it
+        theme = Theme.query.filter_by(slug=theme_id).first()
+        if not theme:
+            # Create theme entry for default themes
+            theme_names = {
+                'default': 'Default Theme',
+                'dark': 'Dark Theme', 
+                'minimal': 'Minimal Theme',
+                'blog': 'Blog Theme'
+            }
+            
+            theme = Theme(
+                name=theme_names.get(theme_id, theme_id.title()),
+                slug=theme_id,
+                version='1.0.0',
+                author='CMS Team',
+                is_active=True
+            )
+            db.session.add(theme)
+        else:
+            theme.is_active = True
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'Theme activated successfully', 'theme': theme_id})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/themes/<theme_id>/settings', methods=['PUT'])
+@jwt_required()
+@role_required(['admin'])
+def update_theme_settings(theme_id):
+    """Update theme settings"""
+    try:
+        data = request.get_json()
+        
+        theme = Theme.query.filter_by(slug=theme_id).first()
+        if not theme:
+            return jsonify({'error': 'Theme not found'}), 404
+        
+        # Store settings as JSON string
+        theme.settings = json.dumps(data)
+        db.session.commit()
+        
+        return jsonify({'message': 'Theme settings updated successfully'})
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

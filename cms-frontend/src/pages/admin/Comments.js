@@ -73,12 +73,17 @@ const Comments = () => {
     spam: 0,
     trash: 0,
   });
+  const [postsList, setPostsList] = useState([]);
   const { user } = useAuth();
 
   useEffect(() => {
     fetchComments();
     fetchStats();
   }, [page, rowsPerPage, tabValue, filters]);
+
+  useEffect(() => {
+    fetchPostsList();
+  }, []);
 
   const fetchComments = async () => {
     try {
@@ -113,6 +118,15 @@ const Comments = () => {
       setStats(response);
     } catch (error) {
       console.error('Failed to fetch comment stats:', error);
+    }
+  };
+
+  const fetchPostsList = async () => {
+    try {
+      const response = await apiService.getPostsList();
+      setPostsList(response);
+    } catch (error) {
+      console.error('Failed to fetch posts list:', error);
     }
   };
 
@@ -283,6 +297,21 @@ const Comments = () => {
               ),
             }}
           />
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel>In Response To</InputLabel>
+            <Select
+              value={filters.post_id}
+              label="In Response To"
+              onChange={(e) => setFilters({ ...filters, post_id: e.target.value })}
+            >
+              <MenuItem value="">All Posts</MenuItem>
+              {postsList.map((post) => (
+                <MenuItem key={post.id} value={post.id}>
+                  {post.title} ({post.comment_count})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <Button
             variant="outlined"
             startIcon={<FilterList />}
