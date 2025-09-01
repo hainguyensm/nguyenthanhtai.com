@@ -18,7 +18,7 @@ services:
       cp ../cms-frontend/build/index.html templates/
       cp ../cms-frontend/build/manifest.json ./
     startCommand: |
-      gunicorn --bind 0.0.0.0:$PORT start:app
+      cd cms-backend && gunicorn --bind 0.0.0.0:$PORT app_unified:app
     envVars:
       - key: FLASK_ENV
         value: production
