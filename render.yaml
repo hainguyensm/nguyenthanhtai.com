@@ -10,10 +10,13 @@ services:
       cd ../cms-frontend
       npm install
       npm run build
-      # Copy built frontend to backend static folder
+      # Copy built frontend to backend
       cd ../cms-backend
-      rm -rf static/*
-      cp -r ../cms-frontend/build/* static/
+      rm -rf static templates/index.html manifest.json
+      mkdir -p templates
+      cp -r ../cms-frontend/build/static ./
+      cp ../cms-frontend/build/index.html templates/
+      cp ../cms-frontend/build/manifest.json ./
     startCommand: |
       gunicorn --bind 0.0.0.0:$PORT start:app
     envVars:
