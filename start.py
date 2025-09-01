@@ -4,7 +4,11 @@ import os
 import sys
 
 # Add the cms-backend directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'cms-backend'))
+cms_backend_path = os.path.join(os.path.dirname(__file__), 'cms-backend')
+sys.path.insert(0, cms_backend_path)
+
+# Change to cms-backend directory so relative paths work correctly
+os.chdir(cms_backend_path)
 
 # Import the Flask app from app_unified
 from app_unified import app
