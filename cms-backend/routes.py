@@ -1,5 +1,5 @@
 from app_unified import app, db, jwt, allowed_file, role_required, User, Post, Category, Tag, Comment, Media, Setting, Theme, Plugin, PostRevision
-from flask import jsonify, request, send_from_directory
+from flask import jsonify, request, send_from_directory, send_file
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 from datetime import datetime
@@ -472,6 +472,30 @@ def get_dashboard_stats():
                            Comment.query.order_by(Comment.created_at.desc()).limit(5).all()]
     }
     return jsonify(stats)
+
+# Admin Routes
+@app.route('/api/admin/download-database', methods=['GET'])
+@jwt_required()
+@role_required(['admin'])
+def download_database():
+    try:
+        # Get the database file path
+        db_path = os.path.join(os.path.dirname(__file__), 'instance', 'cms.db')
+        
+        if not os.path.exists(db_path):
+            return jsonify({'error': 'Database file not found'}), 404
+        
+        # Generate filename with current date
+        filename = f"cms-backup-{datetime.utcnow().strftime('%Y-%m-%d')}.db"
+        
+        return send_file(
+            db_path,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/x-sqlite3'
+        )
+    except Exception as e:
+        return jsonify({'error': f'Failed to download database: {str(e)}'}), 500
 
 # Comments Routes
 @app.route('/api/posts/<slug>/comments', methods=['GET'])

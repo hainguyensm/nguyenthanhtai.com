@@ -21,6 +21,7 @@ import {
   People,
   Photo,
   TrendingUp,
+  CloudDownload,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import apiService from '../../services/api';
@@ -65,6 +66,39 @@ const Dashboard = () => {
       setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadDatabase = async () => {
+    try {
+      const response = await fetch('/api/admin/download-database', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download database');
+      }
+
+      // Create blob from response
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `cms-backup-${new Date().toISOString().split('T')[0]}.db`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download database:', error);
+      alert('Failed to download database backup');
     }
   };
 
@@ -305,6 +339,24 @@ const Dashboard = () => {
                     <Typography variant="h6">View Site</Typography>
                     <Typography variant="body2" color="textSecondary">
                       See your site as visitors do
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item>
+                <Card 
+                  sx={{ 
+                    cursor: 'pointer', 
+                    '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },
+                    transition: 'all 0.2s'
+                  }}
+                  onClick={handleDownloadDatabase}
+                >
+                  <CardContent sx={{ textAlign: 'center' }}>
+                    <CloudDownload sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
+                    <Typography variant="h6">Download Backup</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Download database backup file
                     </Typography>
                   </CardContent>
                 </Card>
