@@ -3,47 +3,16 @@ services:
     name: nguyen-thanh-tai-blog
     env: python
     buildCommand: |
-      # Install Python dependencies
+      # Install Python dependencies only
       cd cms-backend
       pip install -r requirements.txt
-      # Install Node.js dependencies and build React app
-      cd ../cms-frontend
-      npm install
-      npm run build
-      # Debug: List build output
-      echo "=== Build output structure ==="
-      ls -la build/
-      ls -la build/static/
-      # Copy built frontend to backend with explicit paths
-      cd ../cms-backend
-      rm -rf static templates manifest.json asset-manifest.json
-      mkdir -p templates static/js static/css
-      # Copy static files with absolute paths and error checking
-      if [ -d "../cms-frontend/build/static" ]; then
-        cp -r ../cms-frontend/build/static/* ./static/ || echo "Failed to copy static files"
-      else
-        echo "ERROR: build/static directory not found"
-      fi
-      
-      if [ -f "../cms-frontend/build/index.html" ]; then
-        cp ../cms-frontend/build/index.html ./templates/ || echo "Failed to copy index.html"
-      else
-        echo "ERROR: build/index.html not found"
-      fi
-      
-      if [ -f "../cms-frontend/build/manifest.json" ]; then
-        cp ../cms-frontend/build/manifest.json ./ || echo "Failed to copy manifest.json"
-      fi
-      
-      if [ -f "../cms-frontend/build/asset-manifest.json" ]; then
-        cp ../cms-frontend/build/asset-manifest.json ./ || echo "Failed to copy asset-manifest.json"
-      fi
-      # Debug: Verify files are copied
-      echo "=== Copied files structure ==="
-      ls -la static/
-      ls -la static/js/ || echo "No js directory"
-      ls -la static/css/ || echo "No css directory"
-      ls -la templates/
+      # Static files should already be committed to repo
+      echo "=== Checking committed static files ==="
+      ls -la static/ || echo "No static directory in repo"
+      ls -la static/js/ || echo "No js directory in repo"
+      ls -la static/css/ || echo "No css directory in repo"
+      ls -la templates/ || echo "No templates directory in repo"
+      echo "=== Build complete - using committed static files ==="
     startCommand: |
       cd cms-backend
       echo "=== Production startup debug ==="
