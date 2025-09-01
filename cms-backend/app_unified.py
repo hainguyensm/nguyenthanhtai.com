@@ -458,6 +458,31 @@ def serve_react_app(path):
     else:
         return jsonify({'error': 'index.html not found'}), 404
 
+# Debug route for production troubleshooting
+@app.route('/debug/files')
+def debug_files():
+    import os
+    debug_info = {
+        'working_directory': os.getcwd(),
+        'app_root_path': app.root_path,
+        'static_folder': app.static_folder,
+        'static_url_path': app.static_url_path,
+        'files': {}
+    }
+    
+    # Check what files exist
+    for check_path in ['static', 'static/js', 'static/css', 'templates']:
+        full_path = os.path.join(app.root_path, check_path)
+        if os.path.exists(full_path):
+            try:
+                debug_info['files'][check_path] = os.listdir(full_path)
+            except:
+                debug_info['files'][check_path] = 'Error listing directory'
+        else:
+            debug_info['files'][check_path] = 'Directory does not exist'
+    
+    return jsonify(debug_info)
+
 # Import routes to register them (after all local routes are defined)
 from routes import *
 

@@ -18,11 +18,26 @@ services:
       cd ../cms-backend
       rm -rf static templates manifest.json asset-manifest.json
       mkdir -p templates static/js static/css
-      # Copy static files preserving structure
-      cp -r ../cms-frontend/build/static/* ./static/
-      cp ../cms-frontend/build/index.html ./templates/
-      cp ../cms-frontend/build/manifest.json ./
-      cp ../cms-frontend/build/asset-manifest.json ./ || true
+      # Copy static files with absolute paths and error checking
+      if [ -d "../cms-frontend/build/static" ]; then
+        cp -r ../cms-frontend/build/static/* ./static/ || echo "Failed to copy static files"
+      else
+        echo "ERROR: build/static directory not found"
+      fi
+      
+      if [ -f "../cms-frontend/build/index.html" ]; then
+        cp ../cms-frontend/build/index.html ./templates/ || echo "Failed to copy index.html"
+      else
+        echo "ERROR: build/index.html not found"
+      fi
+      
+      if [ -f "../cms-frontend/build/manifest.json" ]; then
+        cp ../cms-frontend/build/manifest.json ./ || echo "Failed to copy manifest.json"
+      fi
+      
+      if [ -f "../cms-frontend/build/asset-manifest.json" ]; then
+        cp ../cms-frontend/build/asset-manifest.json ./ || echo "Failed to copy asset-manifest.json"
+      fi
       # Debug: Verify files are copied
       echo "=== Copied files structure ==="
       ls -la static/
@@ -30,7 +45,15 @@ services:
       ls -la static/css/ || echo "No css directory"
       ls -la templates/
     startCommand: |
-      cd cms-backend && gunicorn --bind 0.0.0.0:$PORT app_unified:app
+      cd cms-backend
+      echo "=== Production startup debug ==="
+      pwd
+      ls -la static/ || echo "No static directory"
+      ls -la static/js/ || echo "No js directory" 
+      ls -la static/css/ || echo "No css directory"
+      ls -la templates/ || echo "No templates directory"
+      echo "=== Starting gunicorn ==="
+      gunicorn --bind 0.0.0.0:$PORT app_unified:app
     envVars:
       - key: FLASK_ENV
         value: production
