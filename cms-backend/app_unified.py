@@ -17,7 +17,8 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__, static_folder='static', static_url_path='/static')
+# Disable automatic static file serving - we'll handle it manually
+app = Flask(__name__, static_folder=None)
 
 # Configuration
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -482,6 +483,39 @@ def debug_files():
             debug_info['files'][check_path] = 'Directory does not exist'
     
     return jsonify(debug_info)
+
+# Manual static file serving for production
+@app.route('/static/js/<filename>')
+def serve_js(filename):
+    import os
+    # Try multiple possible locations
+    possible_paths = [
+        os.path.join(app.root_path, 'static', 'js', filename),
+        os.path.join(app.root_path, 'static', 'static', 'js', filename),
+        os.path.join(app.root_path, '..', 'cms-frontend', 'build', 'static', 'js', filename)
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            return send_file(path, mimetype='application/javascript')
+    
+    return jsonify({'error': f'JS file {filename} not found in any location', 'tried': possible_paths}), 404
+
+@app.route('/static/css/<filename>')
+def serve_css(filename):
+    import os
+    # Try multiple possible locations
+    possible_paths = [
+        os.path.join(app.root_path, 'static', 'css', filename),
+        os.path.join(app.root_path, 'static', 'static', 'css', filename),
+        os.path.join(app.root_path, '..', 'cms-frontend', 'build', 'static', 'css', filename)
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            return send_file(path, mimetype='text/css')
+    
+    return jsonify({'error': f'CSS file {filename} not found in any location', 'tried': possible_paths}), 404
 
 # Import routes to register them (after all local routes are defined)
 from routes import *
