@@ -1004,14 +1004,22 @@ def create_backup():
             shutil.rmtree(backup_dir)
         os.makedirs(backup_dir)
         
-        # Copy database with improved path detection
+        # Copy database with corrected production paths
         def find_database():
+            # Working directory in production is /opt/render/project/src
+            # But the app runs from cms-backend subdirectory
             possible_db_paths = [
+                # Current working directory paths (should work in production)
                 os.path.join(os.getcwd(), 'instance', 'cms.db'),
+                # Relative to script location 
                 os.path.join(os.path.dirname(__file__), 'instance', 'cms.db'),
+                # Production specific paths
+                '/opt/render/project/src/cms-backend/instance/cms.db',
+                '/opt/render/project/src/instance/cms.db', 
+                # Local development paths
                 os.path.join(os.getcwd(), 'cms-backend', 'instance', 'cms.db'),
-                os.path.join('/', 'opt', 'render', 'project', 'src', 'cms-backend', 'instance', 'cms.db'),
-                os.path.join(os.getcwd(), 'instance', 'blog.db'),  # Alternative name
+                # Alternative database name
+                os.path.join(os.getcwd(), 'instance', 'blog.db'),
                 '/tmp/cms.db'
             ]
             
@@ -1030,14 +1038,20 @@ def create_backup():
             with open(os.path.join(backup_dir, 'database_not_found.txt'), 'w') as f:
                 f.write("Database file not found during backup creation")
         
-        # Copy uploads directory with improved path detection  
+        # Copy uploads directory with corrected production paths
         def find_uploads():
             possible_uploads_paths = [
+                # Current working directory paths (should work in production)
                 os.path.join(os.getcwd(), 'uploads'),
+                # Relative to script location
                 os.path.join(os.path.dirname(__file__), 'uploads'),
-                os.path.join(os.getcwd(), 'cms-backend', 'uploads'),
+                # Production specific paths  
+                '/opt/render/project/src/cms-backend/uploads',
+                '/opt/render/project/src/uploads',
+                # Flask app config
                 app.config.get('UPLOAD_FOLDER', ''),
-                os.path.join('/', 'opt', 'render', 'project', 'src', 'cms-backend', 'uploads')
+                # Local development paths
+                os.path.join(os.getcwd(), 'cms-backend', 'uploads')
             ]
             
             for uploads_path in possible_uploads_paths:
