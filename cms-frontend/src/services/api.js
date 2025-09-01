@@ -119,16 +119,26 @@ class ApiService {
   // Media endpoints
   getMedia = async (params = {}) => {
     const response = await this.client.get('/media', { params });
-    return response.data;
+    return response.data.media || response.data;
   };
 
-  uploadMedia = async (formData) => {
+  uploadMedia = async (formData, options = {}) => {
     const response = await this.client.post('/media/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      ...options,
     });
     return response.data;
+  };
+
+  updateMedia = async (id, mediaData) => {
+    const response = await this.client.put(`/media/${id}`, mediaData);
+    return response.data;
+  };
+
+  deleteMedia = async (id) => {
+    await this.client.delete(`/media/${id}`);
   };
 
   // Comments endpoints

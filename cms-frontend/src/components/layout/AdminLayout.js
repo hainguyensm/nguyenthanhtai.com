@@ -27,6 +27,7 @@ import {
   People,
   Photo,
   Settings,
+  Palette,
   AccountCircle,
   Logout,
   Add,
@@ -69,6 +70,7 @@ const AdminLayout = () => {
     { text: 'Comments', icon: <Comment />, path: '/admin/comments', roles: ['admin', 'editor'] },
     { text: 'Users', icon: <People />, path: '/admin/users', roles: ['admin', 'editor'] },
     { text: 'Settings', icon: <Settings />, path: '/admin/settings', roles: ['admin'] },
+    { text: 'Themes', icon: <Palette />, path: '/admin/themes', roles: ['admin'] },
   ];
 
   const drawer = (

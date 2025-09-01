@@ -25,6 +25,7 @@ import Categories from './pages/admin/Categories';
 import Comments from './pages/admin/Comments';
 import Users from './pages/admin/Users';
 import Settings from './pages/admin/Settings';
+import Themes from './pages/admin/Themes';
 import Profile from './pages/admin/Profile';
 
 function App() {
@@ -66,6 +67,11 @@ function App() {
           <Route path="settings" element={
             <ProtectedRoute requiredRole={['admin']}>
               <Settings />
+            </ProtectedRoute>
+          } />
+          <Route path="themes" element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <Themes />
             </ProtectedRoute>
           } />
           <Route path="profile" element={<Profile />} />

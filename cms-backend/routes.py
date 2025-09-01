@@ -429,6 +429,51 @@ def upload_media():
     
     return jsonify({'error': 'Invalid file type'}), 400
 
+@app.route('/api/media/<int:media_id>', methods=['PUT'])
+@jwt_required()
+@role_required(['admin', 'editor', 'author'])
+def update_media(media_id):
+    media = Media.query.get_or_404(media_id)
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    
+    # Check permissions
+    if current_user.role not in ['admin', 'editor'] and media.uploaded_by != int(current_user_id):
+        return jsonify({'error': 'Insufficient permissions'}), 403
+    
+    data = request.get_json()
+    
+    media.title = data.get('title', media.title)
+    media.alt_text = data.get('alt_text', media.alt_text)
+    media.caption = data.get('caption', media.caption)
+    media.description = data.get('description', media.description)
+    
+    db.session.commit()
+    return jsonify(media.to_dict())
+
+@app.route('/api/media/<int:media_id>', methods=['DELETE'])
+@jwt_required()
+@role_required(['admin', 'editor', 'author'])
+def delete_media(media_id):
+    media = Media.query.get_or_404(media_id)
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    
+    # Check permissions
+    if current_user.role not in ['admin', 'editor'] and media.uploaded_by != int(current_user_id):
+        return jsonify({'error': 'Insufficient permissions'}), 403
+    
+    # Delete physical file
+    try:
+        if os.path.exists(media.file_path):
+            os.remove(media.file_path)
+    except Exception as e:
+        print(f"Error deleting file: {e}")
+    
+    db.session.delete(media)
+    db.session.commit()
+    return jsonify({'message': 'Media deleted successfully'})
+
 # Settings Routes
 @app.route('/api/settings', methods=['GET'])
 @jwt_required()
