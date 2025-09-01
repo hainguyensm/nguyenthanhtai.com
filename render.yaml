@@ -10,13 +10,25 @@ services:
       cd ../cms-frontend
       npm install
       npm run build
-      # Copy built frontend to backend
+      # Debug: List build output
+      echo "=== Build output structure ==="
+      ls -la build/
+      ls -la build/static/
+      # Copy built frontend to backend with explicit paths
       cd ../cms-backend
-      rm -rf static templates/index.html manifest.json
-      mkdir -p templates
-      cp -r ../cms-frontend/build/static ./
-      cp ../cms-frontend/build/index.html templates/
+      rm -rf static templates manifest.json asset-manifest.json
+      mkdir -p templates static/js static/css
+      # Copy static files preserving structure
+      cp -r ../cms-frontend/build/static/* ./static/
+      cp ../cms-frontend/build/index.html ./templates/
       cp ../cms-frontend/build/manifest.json ./
+      cp ../cms-frontend/build/asset-manifest.json ./ || true
+      # Debug: Verify files are copied
+      echo "=== Copied files structure ==="
+      ls -la static/
+      ls -la static/js/ || echo "No js directory"
+      ls -la static/css/ || echo "No css directory"
+      ls -la templates/
     startCommand: |
       cd cms-backend && gunicorn --bind 0.0.0.0:$PORT app_unified:app
     envVars:
