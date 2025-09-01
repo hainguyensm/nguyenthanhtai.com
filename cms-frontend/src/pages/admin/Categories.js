@@ -33,7 +33,7 @@ const Categories = () => {
 
   const fetchCategories = async () => {
     try {
-      const data = await apiService.getCategories();
+      const data = await apiService.getAdminCategories();
       setCategories(data);
     } catch (error) {
       toast.error('Failed to load categories');
@@ -91,7 +91,21 @@ const Categories = () => {
                 <TableRow key={category.id}>
                   <TableCell>{category.name}</TableCell>
                   <TableCell>{category.description || 'No description'}</TableCell>
-                  <TableCell>0</TableCell>
+                  <TableCell>
+                    <Box sx={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center',
+                      backgroundColor: category.posts_count > 0 ? 'primary.light' : 'grey.200',
+                      color: category.posts_count > 0 ? 'primary.contrastText' : 'text.secondary',
+                      px: 1.5,
+                      py: 0.5,
+                      borderRadius: 1,
+                      fontSize: '0.875rem',
+                      fontWeight: 500
+                    }}>
+                      {category.posts_count || 0} {category.posts_count === 1 ? 'post' : 'posts'}
+                    </Box>
+                  </TableCell>
                   <TableCell>
                     <Button size="small">Edit</Button>
                     <Button size="small" color="error">Delete</Button>

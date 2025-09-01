@@ -110,8 +110,8 @@ class Category(db.Model):
     # Self-referential relationship for parent/child categories
     children = db.relationship('Category', backref=db.backref('parent', remote_side=[id]))
     
-    def to_dict(self):
-        return {
+    def to_dict(self, include_posts_count=False):
+        result = {
             'id': self.id,
             'name': self.name,
             'slug': self.slug,
@@ -123,6 +123,12 @@ class Category(db.Model):
             'created_at': self.created_at.isoformat(),
             'children': [child.to_dict() for child in self.children] if self.children else []
         }
+        
+        if include_posts_count:
+            # Count posts in this category (including published posts only for public use)
+            result['posts_count'] = Post.query.filter_by(category_id=self.id, status='published').count()
+            
+        return result
 
 class Tag(db.Model):
     __tablename__ = 'tags'

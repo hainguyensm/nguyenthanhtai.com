@@ -474,6 +474,14 @@ def get_dashboard_stats():
     return jsonify(stats)
 
 # Admin Routes
+@app.route('/api/admin/categories', methods=['GET'])
+@jwt_required()
+@role_required(['admin', 'editor'])
+def get_admin_categories():
+    """Get categories with posts count for admin interface"""
+    categories = Category.query.all()
+    return jsonify([cat.to_dict(include_posts_count=True) for cat in categories])
+
 @app.route('/api/admin/download-database', methods=['GET'])
 @jwt_required()
 @role_required(['admin'])

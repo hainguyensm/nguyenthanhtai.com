@@ -79,6 +79,12 @@ class ApiService {
     return response.data;
   };
 
+  // Admin-specific categories endpoint with posts count
+  getAdminCategories = async () => {
+    const response = await this.client.get('/admin/categories');
+    return response.data;
+  };
+
   createCategory = async (categoryData) => {
     const response = await this.client.post('/categories', categoryData);
     return response.data;
