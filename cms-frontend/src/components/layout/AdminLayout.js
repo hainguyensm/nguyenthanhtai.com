@@ -31,13 +31,17 @@ import {
   AccountCircle,
   Logout,
   Add,
+  ChevronLeft,
+  ChevronRight,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
 const drawerWidth = 240;
+const collapsedDrawerWidth = 60;
 
 const AdminLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
@@ -45,6 +49,10 @@ const AdminLayout = () => {
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  const handleDrawerCollapse = () => {
+    setCollapsed(!collapsed);
   };
 
   const handleMenu = (event) => {
@@ -76,9 +84,21 @@ const AdminLayout = () => {
   const drawer = (
     <div>
       <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          CMS Admin
+        <Typography variant="h6" noWrap component="div" sx={{ 
+          display: collapsed ? 'none' : 'block',
+          flexGrow: 1 
+        }}>
+          Blog Admin
         </Typography>
+        <IconButton
+          onClick={handleDrawerCollapse}
+          sx={{ 
+            ml: collapsed ? 0 : 'auto',
+            display: { xs: 'none', sm: 'block' }
+          }}
+        >
+          {collapsed ? <ChevronRight /> : <ChevronLeft />}
+        </IconButton>
       </Toolbar>
       <Divider />
       <List>
@@ -89,11 +109,25 @@ const AdminLayout = () => {
               <ListItemButton
                 selected={location.pathname === item.path}
                 onClick={() => navigate(item.path)}
+                sx={{
+                  minHeight: 48,
+                  justifyContent: collapsed ? 'center' : 'initial',
+                  px: 2.5,
+                }}
               >
-                <ListItemIcon>
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: collapsed ? 0 : 3,
+                    justifyContent: 'center',
+                  }}
+                >
                   {item.icon}
                 </ListItemIcon>
-                <ListItemText primary={item.text} />
+                <ListItemText 
+                  primary={item.text} 
+                  sx={{ opacity: collapsed ? 0 : 1 }}
+                />
               </ListItemButton>
             </ListItem>
           ))}
@@ -106,8 +140,9 @@ const AdminLayout = () => {
       <AppBar
         position="fixed"
         sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
+          width: { sm: `calc(100% - ${collapsed ? collapsedDrawerWidth : drawerWidth}px)` },
+          ml: { sm: `${collapsed ? collapsedDrawerWidth : drawerWidth}px` },
+          transition: 'margin 225ms cubic-bezier(0, 0, 0.2, 1) 0ms, width 225ms cubic-bezier(0, 0, 0.2, 1) 0ms',
         }}
       >
         <Toolbar>
@@ -185,7 +220,7 @@ const AdminLayout = () => {
 
       <Box
         component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        sx={{ width: { sm: collapsed ? collapsedDrawerWidth : drawerWidth }, flexShrink: { sm: 0 } }}
         aria-label="admin navigation"
       >
         <Drawer
@@ -206,7 +241,12 @@ const AdminLayout = () => {
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: collapsed ? collapsedDrawerWidth : drawerWidth,
+              transition: 'width 225ms cubic-bezier(0, 0, 0.2, 1) 0ms',
+              overflowX: 'hidden',
+            },
           }}
           open
         >
@@ -219,9 +259,10 @@ const AdminLayout = () => {
         sx={{
           flexGrow: 1,
           p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          width: { sm: `calc(100% - ${collapsed ? collapsedDrawerWidth : drawerWidth}px)` },
           minHeight: '100vh',
           bgcolor: 'grey.50',
+          transition: 'width 225ms cubic-bezier(0, 0, 0.2, 1) 0ms',
         }}
       >
         <Toolbar />

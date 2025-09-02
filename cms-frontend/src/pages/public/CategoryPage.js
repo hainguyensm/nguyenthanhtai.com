@@ -186,11 +186,13 @@ const CategoryPage = () => {
                         color: 'inherit',
                         transition: 'all 0.2s ease-in-out',
                         '&:hover': {
-                          transform: 'translateX(4px)',
+                          '& .category-name': {
+                            color: 'primary.main',
+                          },
                         },
                       }}
                     >
-                      <Typography variant="body2" sx={{ fontWeight: cat.slug === slug ? 600 : 500 }}>
+                      <Typography variant="body2" className="category-name" sx={{ fontWeight: cat.slug === slug ? 600 : 500, transition: 'color 0.2s ease-in-out' }}>
                         {cat.name}
                       </Typography>
                       <ChevronRight sx={{ fontSize: 16, opacity: 0.7 }} />

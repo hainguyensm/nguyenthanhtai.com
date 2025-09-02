@@ -135,14 +135,15 @@ const HomePage = () => {
                           borderRadius: 1,
                           textDecoration: 'none',
                           color: 'inherit',
-                          textDecoration: 'none',
                           transition: 'all 0.2s ease-in-out',
                           '&:hover': {
-                            transform: 'translateX(4px)',
+                            '& .category-name': {
+                              color: 'primary.main',
+                            },
                           },
                         }}
                       >
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        <Typography variant="body2" className="category-name" sx={{ fontWeight: 500, transition: 'color 0.2s ease-in-out' }}>
                           {category.name}
                         </Typography>
                         <ChevronRight sx={{ fontSize: 16, opacity: 0.7 }} />

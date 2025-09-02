@@ -129,21 +129,10 @@ const SearchResultsPage = () => {
         </Link>
         <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
           <Search sx={{ mr: 0.5 }} fontSize="inherit" />
-          Search Results
+          Search
         </Typography>
       </Breadcrumbs>
 
-      {/* Search Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Search Results
-        </Typography>
-        {query && (
-          <Typography variant="h6" color="text.secondary">
-            {posts.length} results for "{query}"
-          </Typography>
-        )}
-      </Box>
 
       <Grid container spacing={4}>
         {/* Left Sidebar - Categories */}
@@ -175,11 +164,13 @@ const SearchResultsPage = () => {
                         transition: 'all 0.2s ease-in-out',
                         '&:hover': {
                           backgroundColor: '#e0e0e0',
-                          transform: 'translateX(4px)',
+                          '& .category-name': {
+                            color: 'primary.main',
+                          },
                         },
                       }}
                     >
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      <Typography variant="body2" className="category-name" sx={{ fontWeight: 500, transition: 'color 0.2s ease-in-out' }}>
                         {cat.name}
                       </Typography>
                       <ChevronRight sx={{ fontSize: 16, opacity: 0.7 }} />

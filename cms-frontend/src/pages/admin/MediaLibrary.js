@@ -125,11 +125,33 @@ const MediaLibrary = () => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'],
-      'video/*': ['.mp4', '.webm', '.ogg'],
-      'audio/*': ['.mp3', '.wav', '.ogg'],
+      // Images
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.tiff'],
+      // Videos
+      'video/*': ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.wmv', '.flv', '.mkv'],
+      // Audio
+      'audio/*': ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'],
+      // Documents
       'application/pdf': ['.pdf'],
+      'application/msword': ['.doc'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.ms-powerpoint': ['.ppt'],
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+      // Archives
+      'application/zip': ['.zip'],
+      'application/x-rar-compressed': ['.rar'],
+      'application/x-7z-compressed': ['.7z'],
+      'application/x-tar': ['.tar'],
+      'application/gzip': ['.gz'],
+      // Text files
+      'text/plain': ['.txt'],
+      'text/csv': ['.csv'],
+      'application/json': ['.json'],
+      'application/xml': ['.xml'],
     },
+    maxSize: 100 * 1024 * 1024, // 100MB max file size
   });
 
   const handleMenuClick = (event, item) => {
@@ -197,11 +219,45 @@ const MediaLibrary = () => {
     }
   };
 
-  const getFileIcon = (type) => {
+  const getFileIcon = (type, filename) => {
+    // Images
     if (type.startsWith('image')) return <ImageIcon />;
+    
+    // Videos
     if (type.startsWith('video')) return <VideoLibrary />;
+    
+    // Audio
     if (type.startsWith('audio')) return <AudioFile />;
-    if (type === 'application/pdf') return <Description />;
+    
+    // PDF
+    if (type === 'application/pdf') return <Description color="error" />;
+    
+    // Microsoft Office Documents
+    if (type.includes('msword') || type.includes('wordprocessingml') || filename?.endsWith('.doc') || filename?.endsWith('.docx')) {
+      return <Description color="primary" />;
+    }
+    
+    // Excel
+    if (type.includes('excel') || type.includes('spreadsheetml') || filename?.endsWith('.xls') || filename?.endsWith('.xlsx')) {
+      return <Description color="success" />;
+    }
+    
+    // PowerPoint
+    if (type.includes('powerpoint') || type.includes('presentationml') || filename?.endsWith('.ppt') || filename?.endsWith('.pptx')) {
+      return <Description color="warning" />;
+    }
+    
+    // Archives
+    if (type.includes('zip') || type.includes('rar') || type.includes('7z') || type.includes('tar') || type.includes('gzip')) {
+      return <Folder color="secondary" />;
+    }
+    
+    // Text files
+    if (type.startsWith('text') || type.includes('json') || type.includes('xml')) {
+      return <Description />;
+    }
+    
+    // Default
     return <Folder />;
   };
 
@@ -296,7 +352,7 @@ const MediaLibrary = () => {
                             bgcolor: 'grey.100',
                           }}
                         >
-                          {getFileIcon(item.mime_type || item.type)}
+                          {getFileIcon(item.mime_type || item.type, item.filename)}
                         </Box>
                       )}
                       <CardContent sx={{ flexGrow: 1, pb: 1 }}>
@@ -353,7 +409,10 @@ const MediaLibrary = () => {
               or click to select files
             </Typography>
             <Typography variant="caption" color="textSecondary">
-              Supported formats: Images, Videos, Audio, PDF
+              Supported formats: Images (PNG, JPG, GIF, SVG), Videos (MP4, AVI, MOV), Audio (MP3, WAV), Documents (PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX), Archives (ZIP, RAR, 7Z), Text (TXT, CSV, JSON)
+            </Typography>
+            <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1 }}>
+              Maximum file size: 100MB
             </Typography>
           </Box>
 

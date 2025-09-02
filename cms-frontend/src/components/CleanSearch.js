@@ -133,7 +133,8 @@ const CleanSearch = () => {
                     borderRadius: 1,
                     cursor: 'pointer',
                     '&:hover': {
-                      backgroundColor: '#e0e0e0'
+                      backgroundColor: 'primary.light',
+                      color: 'white',
                     }
                   }}
                 >

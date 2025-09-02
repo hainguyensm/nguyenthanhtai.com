@@ -258,57 +258,107 @@ def get_post(slug):
 @jwt_required()
 @role_required(['admin', 'editor', 'author'])
 def create_post():
-    data = request.get_json()
-    current_user_id = get_jwt_identity()
+    try:
+        data = request.get_json()
+        current_user_id = get_jwt_identity()
+        
+        # Debug logging - safely handle Unicode characters
+        try:
+            # Create a safe representation of the data for logging
+            safe_data = {
+                'title': data.get('title', '').encode('ascii', 'replace').decode('ascii'),
+                'slug': data.get('slug', ''),
+                'content_length': len(data.get('content', '')),
+                'status': data.get('status', 'draft'),
+                'category_id': data.get('category_id')
+            }
+            print(f"[DEBUG] Creating post with data: {safe_data}")
+            print(f"[DEBUG] Current user ID: {current_user_id}")
+        except Exception as debug_error:
+            print(f"[DEBUG] Creating post (debug logging failed): {str(debug_error)}")
+            print(f"[DEBUG] Current user ID: {current_user_id}")
+        
+        post = Post(
+            title=data['title'],
+            slug=data.get('slug', ''),  # Add slug from request data
+            content=data.get('content', ''),
+            excerpt=data.get('excerpt', ''),
+            featured_image=data.get('featured_image'),
+            status=data.get('status', 'draft'),
+            post_type=data.get('post_type', 'post'),
+            author_id=current_user_id,
+            category_id=data.get('category_id') if data.get('category_id') else None,
+            comment_status=data.get('comment_status', 'open'),
+            meta_title=data.get('meta_title'),
+            meta_description=data.get('meta_description'),
+            meta_keywords=data.get('meta_keywords'),
+            custom_fields=json.dumps(data.get('custom_fields', {}))
+        )
+        
+        # Generate slug
+        post.generate_slug()
+        
+        # Set published date if publishing
+        if post.status == 'published' and not post.published_at:
+            post.published_at = datetime.utcnow()
+        
+        db.session.add(post)
+        db.session.flush()  # Get the post ID
+        
+        # Handle tags
+        if data.get('tags'):
+            for tag_name in data['tags']:
+                # Check for existing tag by name first
+                tag = Tag.query.filter_by(name=tag_name).first()
+                if not tag:
+                    # If not found by name, check by slug to avoid UNIQUE constraint error
+                    tag_slug = slugify(tag_name)
+                    tag = Tag.query.filter_by(slug=tag_slug).first()
+                    if not tag:
+                        # Create new tag only if neither name nor slug exists
+                        try:
+                            tag = Tag(name=tag_name, slug=tag_slug)
+                            db.session.add(tag)
+                            db.session.flush()  # Force immediate insert to catch constraint errors
+                        except Exception as tag_error:
+                            # If tag creation fails due to constraint, try to find existing tag again
+                            db.session.rollback()
+                            tag = Tag.query.filter_by(slug=tag_slug).first()
+                            if not tag:
+                                tag = Tag.query.filter_by(name=tag_name).first()
+                            if not tag:
+                                # If still no tag found, re-raise the original error
+                                raise tag_error
+                post.tags.append(tag)
+        
+        # Create revision
+        revision = PostRevision(
+            post_id=post.id,
+            title=post.title,
+            content=post.content,
+            excerpt=post.excerpt,
+            created_by=current_user_id
+        )
+        db.session.add(revision)
+        
+        db.session.commit()
+        print("[SUCCESS] Post created successfully")
+        
+        return jsonify(post.to_dict()), 201
     
-    post = Post(
-        title=data['title'],
-        content=data.get('content', ''),
-        excerpt=data.get('excerpt', ''),
-        featured_image=data.get('featured_image'),
-        status=data.get('status', 'draft'),
-        post_type=data.get('post_type', 'post'),
-        author_id=current_user_id,
-        category_id=data.get('category_id'),
-        comment_status=data.get('comment_status', 'open'),
-        meta_title=data.get('meta_title'),
-        meta_description=data.get('meta_description'),
-        meta_keywords=data.get('meta_keywords'),
-        custom_fields=json.dumps(data.get('custom_fields', {}))
-    )
-    
-    # Generate slug
-    post.generate_slug()
-    
-    # Set published date if publishing
-    if post.status == 'published' and not post.published_at:
-        post.published_at = datetime.utcnow()
-    
-    db.session.add(post)
-    db.session.flush()  # Get the post ID
-    
-    # Handle tags
-    if data.get('tags'):
-        for tag_name in data['tags']:
-            tag = Tag.query.filter_by(name=tag_name).first()
-            if not tag:
-                tag = Tag(name=tag_name, slug=slugify(tag_name))
-                db.session.add(tag)
-            post.tags.append(tag)
-    
-    # Create revision
-    revision = PostRevision(
-        post_id=post.id,
-        title=post.title,
-        content=post.content,
-        excerpt=post.excerpt,
-        created_by=current_user_id
-    )
-    db.session.add(revision)
-    
-    db.session.commit()
-    
-    return jsonify(post.to_dict()), 201
+    except Exception as e:
+        # Safe error logging to avoid Unicode encoding issues
+        try:
+            error_msg = str(e).encode('ascii', 'replace').decode('ascii')
+            print(f"[ERROR] Error creating post: {error_msg}")
+            print(f"[ERROR] Error type: {type(e).__name__}")
+            print(f"[ERROR] Error args length: {len(e.args) if hasattr(e, 'args') else 0}")
+        except Exception as log_error:
+            print(f"[ERROR] Error creating post (logging failed): {type(e).__name__}")
+            print(f"[ERROR] Logging error: {str(log_error)}")
+        
+        db.session.rollback()
+        return jsonify({'error': f'Failed to create post: {str(e)}'}), 500
 
 @app.route('/api/posts/<int:post_id>', methods=['PUT'])
 @jwt_required()
@@ -361,10 +411,27 @@ def update_post(post_id):
     if 'tags' in data:
         post.tags.clear()
         for tag_name in data['tags']:
+            # Check for existing tag by name first
             tag = Tag.query.filter_by(name=tag_name).first()
             if not tag:
-                tag = Tag(name=tag_name, slug=slugify(tag_name))
-                db.session.add(tag)
+                # If not found by name, check by slug to avoid UNIQUE constraint error
+                tag_slug = slugify(tag_name)
+                tag = Tag.query.filter_by(slug=tag_slug).first()
+                if not tag:
+                    # Create new tag only if neither name nor slug exists
+                    try:
+                        tag = Tag(name=tag_name, slug=tag_slug)
+                        db.session.add(tag)
+                        db.session.flush()  # Force immediate insert to catch constraint errors
+                    except Exception as tag_error:
+                        # If tag creation fails due to constraint, try to find existing tag again
+                        db.session.rollback()
+                        tag = Tag.query.filter_by(slug=tag_slug).first()
+                        if not tag:
+                            tag = Tag.query.filter_by(name=tag_name).first()
+                        if not tag:
+                            # If still no tag found, re-raise the original error
+                            raise tag_error
             post.tags.append(tag)
     
     post.updated_at = datetime.utcnow()
@@ -493,15 +560,33 @@ def upload_media():
         unique_filename = f"{uuid.uuid4().hex}.{ext}"
         
         # Determine file type and folder
-        if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp']:
+        if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff']:
             file_type = 'image'
             folder = 'images'
-        elif ext in ['mp4', 'avi', 'mov']:
+        elif ext in ['mp4', 'webm', 'ogg', 'avi', 'mov', 'wmv', 'flv', 'mkv']:
             file_type = 'video'
-            folder = 'images'  # Using same folder for now
-        elif ext in ['mp3', 'wav', 'ogg']:
+            folder = 'documents'
+        elif ext in ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac']:
             file_type = 'audio'
-            folder = 'images'
+            folder = 'documents'
+        elif ext in ['pdf']:
+            file_type = 'pdf'
+            folder = 'documents'
+        elif ext in ['doc', 'docx']:
+            file_type = 'word'
+            folder = 'documents'
+        elif ext in ['xls', 'xlsx']:
+            file_type = 'excel'
+            folder = 'documents'
+        elif ext in ['ppt', 'pptx']:
+            file_type = 'powerpoint'
+            folder = 'documents'
+        elif ext in ['zip', 'rar', '7z', 'tar', 'gz']:
+            file_type = 'archive'
+            folder = 'documents'
+        elif ext in ['txt', 'csv', 'json', 'xml']:
+            file_type = 'text'
+            folder = 'documents'
         else:
             file_type = 'document'
             folder = 'documents'

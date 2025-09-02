@@ -33,9 +33,13 @@ import {
   Image as ImageIcon,
   Delete,
   Edit,
+  AutoFixHigh,
 } from '@mui/icons-material';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { Editor } from 'react-draft-wysiwyg';
+import { EditorState, convertToRaw, ContentState } from 'draft-js';
+import draftToHtml from 'draftjs-to-html';
+import htmlToDraft from 'html-to-draftjs';
+import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
 import { useForm, Controller } from 'react-hook-form';
 import slugify from 'slugify';
 import apiService from '../../services/api';
@@ -64,6 +68,7 @@ const PostEditor = () => {
     watch,
     setValue,
     reset,
+    trigger,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -139,6 +144,9 @@ const PostEditor = () => {
         meta_keywords: post.meta_keywords || '',
       });
       
+      // Set editor state with post content
+      setEditorState(htmlToEditorState(post.content));
+      
       setSelectedTags(post.tags.map(tag => tag.name));
       
       // If post has featured image, try to find it in media library
@@ -184,21 +192,82 @@ const PostEditor = () => {
   };
 
   const handlePublish = async (data) => {
-    const publishData = { ...data, status: 'published', tags: selectedTags };
+    console.log('=== PUBLISH DEBUG START ===');
+    console.log('handlePublish called with:', data);
+    console.log('Form errors:', errors);
+    console.log('Selected tags:', selectedTags);
+    console.log('Editor state content:', editorStateToHtml(editorState));
+    console.log('Form validation state:', {
+      isValid: Object.keys(errors).length === 0,
+      errors: errors
+    });
+    
+    // Check for required fields manually
+    if (!data.title || !data.slug) {
+      console.error('❌ Missing required fields:', { title: data.title, slug: data.slug });
+      toast.error('Please fill in all required fields (Title and Slug)');
+      return;
+    }
+    
+    // Ensure content is properly set from the editor
+    const currentContent = data.content || editorStateToHtml(editorState);
+    console.log('Content validation:', {
+      formContent: data.content,
+      editorContent: editorStateToHtml(editorState),
+      finalContent: currentContent,
+      contentLength: currentContent?.length,
+      isEmpty: !currentContent || currentContent.trim() === '<p></p>' || currentContent.trim() === ''
+    });
+    
+    if (!currentContent || currentContent.trim() === '<p></p>' || currentContent.trim() === '') {
+      console.error('❌ Content is empty');
+      toast.error('Please add some content to your post');
+      return;
+    }
+    
+    const publishData = { 
+      ...data, 
+      content: currentContent,
+      status: 'published', 
+      tags: selectedTags 
+    };
+    console.log('✅ Publishing with data:', publishData);
+    console.log('API call about to be made...');
     try {
       setLoading(true);
       if (isEditing) {
-        await apiService.updatePost(id, publishData);
+        console.log('🔄 Updating existing post...');
+        const response = await apiService.updatePost(id, publishData);
+        console.log('✅ Update response:', response);
         toast.success('Post published successfully');
       } else {
-        await apiService.createPost(publishData);
+        console.log('🔄 Creating new post...');
+        const response = await apiService.createPost(publishData);
+        console.log('✅ Create response:', response);
         toast.success('Post published successfully');
+        console.log('📍 Navigating to /admin/posts');
         navigate('/admin/posts');
       }
+      console.log('=== PUBLISH DEBUG END: SUCCESS ===');
     } catch (error) {
-      toast.error('Failed to publish post');
+      console.log('=== PUBLISH DEBUG END: ERROR ===');
+      console.error('❌ Publish error full object:', error);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      
+      if (error.response) {
+        console.error('❌ Response status:', error.response.status);
+        console.error('❌ Response data:', error.response.data);
+        console.error('❌ Response headers:', error.response.headers);
+      }
+      
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to publish post';
+      console.error('❌ Final error message:', errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
+      console.log('🏁 Publish process completed, loading state reset');
     }
   };
 
@@ -212,18 +281,618 @@ const PostEditor = () => {
     setValue('featured_image', '');
   };
 
-  const modules = {
-    toolbar: [
-      [{ header: [1, 2, 3, 4, 5, 6, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ indent: '-1' }, { indent: '+1' }],
-      ['link', 'image', 'video'],
-      [{ align: [] }],
-      [{ color: [] }, { background: [] }],
-      ['blockquote', 'code-block'],
-      ['clean'],
-    ],
+  const generateSampleContent = async () => {
+    try {
+      // Fetch media from library for various file types
+      const mediaResponse = await apiService.getMedia({ page: 1, per_page: 50 });
+      const availableMedia = mediaResponse.media || [];
+      
+      const sampleTitles = [
+        'The Future of Biotechnology in Medicine',
+        'Advances in Metabolic Engineering for Sustainable Production',
+        'Synthetic Biology: Programming Life for Innovation',
+        'Fermentation Technology in Industrial Biotechnology',
+        'CRISPR Gene Editing: Recent Breakthroughs and Applications',
+        'Bioinformatics Tools for Modern Research',
+        'Protein Engineering and Design Strategies',
+        'Microbial Cell Factories for Biomanufacturing',
+        'Systems Biology Approaches to Understanding Life',
+        'Bioprocess Optimization for Commercial Scale Production'
+      ];
+
+      // Filter media by type
+      const imageMedia = availableMedia.filter(media => 
+        media.filename && (media.filename.toLowerCase().includes('.jpg') || 
+        media.filename.toLowerCase().includes('.jpeg') || 
+        media.filename.toLowerCase().includes('.png') || 
+        media.filename.toLowerCase().includes('.gif') ||
+        media.filename.toLowerCase().includes('.webp'))
+      );
+      
+      const pdfMedia = availableMedia.filter(media => 
+        media.filename && media.filename.toLowerCase().includes('.pdf')
+      );
+      
+      const wordMedia = availableMedia.filter(media => 
+        media.filename && (media.filename.toLowerCase().includes('.doc') || 
+        media.filename.toLowerCase().includes('.docx'))
+      );
+      
+      const downloadFiles = availableMedia.filter(media => 
+        media.filename && (media.filename.toLowerCase().includes('.zip') || 
+        media.filename.toLowerCase().includes('.xlsx') || 
+        media.filename.toLowerCase().includes('.pptx') ||
+        media.filename.toLowerCase().includes('.csv') ||
+        media.filename.toLowerCase().includes('.txt'))
+      );
+
+      // Sample fallback URLs
+      const fallbackImages = [
+        'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800',
+        'https://images.unsplash.com/photo-1576158114131-f211996e9137?w=800',
+        'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800',
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800',
+        'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800'
+      ];
+
+      // Get random media files
+      let randomImage, randomPdf, randomWord, randomDownload;
+      
+      // Get random image
+      if (imageMedia.length > 0) {
+        const randomMedia = imageMedia[Math.floor(Math.random() * imageMedia.length)];
+        randomImage = randomMedia.url;
+        setSelectedFeaturedImage(randomMedia);
+        setValue('featured_image', randomMedia.url);
+      } else {
+        randomImage = fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
+        setValue('featured_image', randomImage);
+      }
+
+      // Get random PDF
+      if (pdfMedia.length > 0) {
+        const randomPdfMedia = pdfMedia[Math.floor(Math.random() * pdfMedia.length)];
+        randomPdf = randomPdfMedia;
+      }
+
+      // Get random Word document
+      if (wordMedia.length > 0) {
+        const randomWordMedia = wordMedia[Math.floor(Math.random() * wordMedia.length)];
+        randomWord = randomWordMedia;
+      }
+
+      // Get random download file
+      if (downloadFiles.length > 0) {
+        const randomDownloadMedia = downloadFiles[Math.floor(Math.random() * downloadFiles.length)];
+        randomDownload = randomDownloadMedia;
+      }
+
+      // Get video files from media library or use sample YouTube videos
+      const videoMedia = availableMedia.filter(media => 
+        media.filename && (media.filename.toLowerCase().includes('.mp4') || 
+        media.filename.toLowerCase().includes('.webm') || 
+        media.filename.toLowerCase().includes('.ogg') ||
+        media.filename.toLowerCase().includes('.avi') ||
+        media.filename.toLowerCase().includes('.mov'))
+      );
+
+      let videoHtml;
+      if (videoMedia.length > 0) {
+        const randomVideoMedia = videoMedia[Math.floor(Math.random() * videoMedia.length)];
+        videoHtml = `
+          <div style="margin: 20px 0; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+            <div style="background: #f5f5f5; padding: 12px; border-bottom: 1px solid #ddd;">
+              <span style="color: #1976d2; font-weight: bold; margin-right: 10px;">🎬</span>
+              <span style="font-weight: bold;">${randomVideoMedia.filename || 'Research Video'}</span>
+            </div>
+            <video controls style="width: 100%; height: auto; display: block;">
+              <source src="${randomVideoMedia.url}" type="video/mp4">
+              <source src="${randomVideoMedia.url}" type="video/webm">
+              <source src="${randomVideoMedia.url}" type="video/ogg">
+              Your browser does not support the video tag.
+              <p>Video not supported. <a href="${randomVideoMedia.url}" target="_blank">Download video</a></p>
+            </video>
+          </div>`;
+      } else {
+        // Fallback to YouTube videos
+        const sampleVideos = [
+          'https://www.youtube.com/embed/dQw4w9WgXcQ',
+          'https://www.youtube.com/embed/kJQP7kiw5Fk',
+          'https://www.youtube.com/embed/oHg5SJYRHA0'
+        ];
+        const randomVideo = sampleVideos[Math.floor(Math.random() * sampleVideos.length)];
+        videoHtml = `
+          <div style="margin: 20px 0; position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px;">
+            <iframe src="${randomVideo}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen></iframe>
+          </div>`;
+      }
+
+      // Build PDF viewer HTML with multiple viewing options
+      const pdfViewerHtml = randomPdf ? 
+        `<h2>Research Document</h2>
+        <div style="margin: 20px 0; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+          <div style="background: #f5f5f5; padding: 12px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center;">
+              <span style="color: #1976d2; font-weight: bold; margin-right: 10px;">📄</span>
+              <span style="font-weight: bold;">${randomPdf.filename || 'Research Document.pdf'}</span>
+            </div>
+            <div>
+              <a href="${randomPdf.url}" target="_blank" style="background: #1976d2; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; margin-right: 8px; font-size: 0.9em;">View Full Size</a>
+              <a href="${randomPdf.url}" download style="background: #4caf50; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 0.9em;">Download</a>
+            </div>
+          </div>
+          <div style="position: relative;">
+            <iframe src="${randomPdf.url}#toolbar=1&navpanes=1&scrollbar=1" width="100%" height="600" frameborder="0" style="display: block;"></iframe>
+            <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 8px 12px; border-radius: 4px; font-size: 0.8em;">
+              PDF Viewer - Use browser controls to navigate
+            </div>
+          </div>
+        </div>` : 
+        '<h2>Research Document</h2><div style="margin: 20px 0; padding: 20px; border: 2px dashed #ddd; border-radius: 8px; text-align: center; color: #666;"><p><strong>📄 PDF Viewer</strong></p><p>PDF documents would be displayed here when available in the media library.</p></div>';
+
+      // Build Word document HTML
+      const wordDocHtml = randomWord ? 
+        `<h2>Technical Report</h2><div style="margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 8px;"><p><strong>📄 Word Document:</strong> <a href="${randomWord.url}" target="_blank" style="color: #1976d2; text-decoration: none; font-weight: bold;">${randomWord.filename || 'Technical Report.docx'}</a></p><p style="margin-top: 10px; color: #666;">Click to view the full technical report with detailed methodology and findings.</p></div>` : 
+        '<h2>Technical Report</h2><div style="margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 8px;"><p><strong>📄 Word Document:</strong> Technical reports would be available here when uploaded to the media library.</p></div>';
+
+      // Build download file HTML
+      const downloadFileHtml = randomDownload ? 
+        `<h2>Additional Resources</h2><div style="margin: 20px 0; padding: 15px; border: 2px dashed #1976d2; border-radius: 8px; text-align: center;"><p><strong>📥 Download:</strong></p><a href="${randomDownload.url}" download style="display: inline-block; background: #1976d2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 10px;">${randomDownload.filename || 'Additional Resources'}</a><p style="margin-top: 10px; color: #666; font-size: 0.9em;">Click to download supplementary materials and datasets.</p></div>` : 
+        '<h2>Additional Resources</h2><div style="margin: 20px 0; padding: 15px; border: 2px dashed #1976d2; border-radius: 8px; text-align: center;"><p><strong>📥 Download:</strong></p><p style="color: #666;">Downloadable resources would be available here when uploaded to the media library.</p></div>';
+
+      // Build comprehensive sample data tables HTML
+      const sampleTableHtml = `
+        <h2>Research Data Analysis</h2>
+        <div style="margin: 20px 0; overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-family: Arial, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <thead>
+              <tr style="background: linear-gradient(135deg, #1976d2, #42a5f5); color: white;">
+                <th style="border: 1px solid #ddd; padding: 15px; text-align: left; font-weight: bold; font-size: 14px;">Sample ID</th>
+                <th style="border: 1px solid #ddd; padding: 15px; text-align: center; font-weight: bold; font-size: 14px;">Concentration (mg/L)</th>
+                <th style="border: 1px solid #ddd; padding: 15px; text-align: center; font-weight: bold; font-size: 14px;">pH Level</th>
+                <th style="border: 1px solid #ddd; padding: 15px; text-align: center; font-weight: bold; font-size: 14px;">Temperature (°C)</th>
+                <th style="border: 1px solid #ddd; padding: 15px; text-align: center; font-weight: bold; font-size: 14px;">Growth Rate (/h)</th>
+                <th style="border: 1px solid #ddd; padding: 15px; text-align: center; font-weight: bold; font-size: 14px;">Efficiency (%)</th>
+                <th style="border: 1px solid #ddd; padding: 15px; text-align: center; font-weight: bold; font-size: 14px;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background-color: #f8f9fa;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #1976d2;">BT-001</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">125.5 ± 2.1</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">7.2</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">37.0</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">0.85</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">94.2</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;"><span style="background: #4caf50; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Optimal</span></td>
+              </tr>
+              <tr style="background-color: #ffffff;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #1976d2;">BT-002</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">98.3 ± 1.8</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">6.8</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">35.5</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">0.72</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">87.6</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;"><span style="background: #ff9800; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Good</span></td>
+              </tr>
+              <tr style="background-color: #f8f9fa;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #1976d2;">BT-003</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">142.7 ± 3.2</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">7.0</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">38.2</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">0.91</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">96.8</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;"><span style="background: #4caf50; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Optimal</span></td>
+              </tr>
+              <tr style="background-color: #ffffff;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #1976d2;">BT-004</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">76.4 ± 2.9</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">6.5</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">33.8</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">0.58</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">73.5</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;"><span style="background: #f44336; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Low</span></td>
+              </tr>
+              <tr style="background-color: #f8f9fa;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #1976d2;">BT-005</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">108.9 ± 1.5</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">7.1</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">36.7</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">0.79</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">91.3</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;"><span style="background: #ff9800; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Good</span></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr style="background: #e3f2fd; font-weight: bold;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold;">Average</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">110.4 ± 2.1</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">6.9</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">36.2</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">0.77</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">88.7</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">-</td>
+              </tr>
+            </tfoot>
+          </table>
+          <p style="font-size: 0.9em; color: #666; font-style: italic; margin: 10px 0;">Table 1: Experimental results showing sample characteristics and growth performance under various controlled conditions.</p>
+        </div>
+        
+        <h3 style="color: #2e7d32; margin-top: 30px;">Comparative Analysis Summary</h3>
+        <div style="margin: 20px 0; overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-family: Arial, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <thead>
+              <tr style="background: linear-gradient(135deg, #2e7d32, #66bb6a); color: white;">
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold;">Parameter</th>
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">Minimum</th>
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">Maximum</th>
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">Mean ± SD</th>
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">Optimal Range</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background-color: #f8f9fa;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #2e7d32;">Concentration (mg/L)</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">76.4</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">142.7</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">110.4 ± 25.8</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; background: #e8f5e8;">100-150</td>
+              </tr>
+              <tr style="background-color: #ffffff;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #2e7d32;">pH Level</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">6.5</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">7.2</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">6.9 ± 0.3</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; background: #e8f5e8;">6.8-7.2</td>
+              </tr>
+              <tr style="background-color: #f8f9fa;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #2e7d32;">Temperature (°C)</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">33.8</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">38.2</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">36.2 ± 1.8</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; background: #e8f5e8;">35-38</td>
+              </tr>
+              <tr style="background-color: #ffffff;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #2e7d32;">Growth Rate (/h)</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">0.58</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">0.91</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">0.77 ± 0.13</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; background: #e8f5e8;">>0.75</td>
+              </tr>
+              <tr style="background-color: #f8f9fa;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #2e7d32;">Efficiency (%)</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">73.5</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">96.8</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">88.7 ± 9.6</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; background: #e8f5e8;">>90</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size: 0.9em; color: #666; font-style: italic; margin: 10px 0;">Table 2: Statistical summary of experimental parameters showing optimal operating ranges.</p>
+        </div>
+        
+        <h3 style="color: #d32f2f; margin-top: 25px;">Performance Metrics Comparison</h3>
+        <div style="margin: 20px 0; overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-family: Arial, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <thead>
+              <tr style="background: linear-gradient(135deg, #d32f2f, #f44336); color: white;">
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold;">Sample</th>
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">Yield (g/L)</th>
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">Productivity (g/L/h)</th>
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">Substrate Conversion (%)</th>
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">Energy Efficiency</th>
+                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">Cost Index</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background-color: #fff3e0;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #d32f2f;">BT-001</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">18.7</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">0.78</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">94.2</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">⭐⭐⭐⭐⭐</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; color: #4caf50; font-weight: bold;">Low</td>
+              </tr>
+              <tr style="background-color: #ffffff;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #d32f2f;">BT-002</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">15.3</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">0.64</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">87.6</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">⭐⭐⭐⭐</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; color: #ff9800; font-weight: bold;">Medium</td>
+              </tr>
+              <tr style="background-color: #fff3e0;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #d32f2f;">BT-003</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">21.4</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">0.89</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">96.8</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">⭐⭐⭐⭐⭐</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; color: #4caf50; font-weight: bold;">Low</td>
+              </tr>
+              <tr style="background-color: #ffffff;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #d32f2f;">BT-004</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">9.8</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">0.41</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">73.5</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">⭐⭐</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; color: #f44336; font-weight: bold;">High</td>
+              </tr>
+              <tr style="background-color: #fff3e0;">
+                <td style="border: 1px solid #ddd; padding: 12px; font-weight: bold; color: #d32f2f;">BT-005</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">16.9</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">0.70</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">91.3</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">⭐⭐⭐⭐</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center; color: #ff9800; font-weight: bold;">Medium</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size: 0.9em; color: #666; font-style: italic; margin: 10px 0;">Table 3: Performance metrics comparison showing yield, productivity, and economic indicators for each sample.</p>
+        </div>
+      `;
+
+      // Build enhanced lists HTML
+      const enhancedListsHtml = `
+        <h2>Key Research Findings</h2>
+        <div style="margin: 20px 0;">
+          <h3 style="color: #1976d2; margin-bottom: 15px;">🔬 Primary Discoveries</h3>
+          <ul style="line-height: 1.8; padding-left: 25px;">
+            <li style="margin-bottom: 8px;"><strong>Enhanced Protein Expression:</strong> Successfully increased target protein production by 340% through optimized fermentation conditions</li>
+            <li style="margin-bottom: 8px;"><strong>Metabolic Pathway Optimization:</strong> Identified and eliminated three bottleneck enzymes, improving overall pathway efficiency</li>
+            <li style="margin-bottom: 8px;"><strong>Novel Biomarker Discovery:</strong> Characterized 12 new metabolic indicators for real-time process monitoring</li>
+            <li style="margin-bottom: 8px;"><strong>Temperature Stability:</strong> Achieved 95% protein activity retention at elevated temperatures (up to 65°C)</li>
+          </ul>
+          
+          <h3 style="color: #1976d2; margin: 25px 0 15px 0;">⚗️ Methodology Highlights</h3>
+          <ul style="line-height: 1.8; padding-left: 25px;">
+            <li style="margin-bottom: 8px;"><strong>Advanced Analytics:</strong>
+              <ul style="margin-top: 8px; margin-bottom: 8px; padding-left: 20px;">
+                <li style="margin-bottom: 5px;">High-resolution mass spectrometry (HRMS) analysis</li>
+                <li style="margin-bottom: 5px;">Real-time PCR quantification</li>
+                <li style="margin-bottom: 5px;">Multi-dimensional NMR spectroscopy</li>
+                <li style="margin-bottom: 5px;">Flow cytometry cell analysis</li>
+              </ul>
+            </li>
+            <li style="margin-bottom: 8px;"><strong>Computational Modeling:</strong>
+              <ul style="margin-top: 8px; margin-bottom: 8px; padding-left: 20px;">
+                <li style="margin-bottom: 5px;">Molecular dynamics simulations</li>
+                <li style="margin-bottom: 5px;">Machine learning prediction algorithms</li>
+                <li style="margin-bottom: 5px;">Statistical process optimization</li>
+                <li style="margin-bottom: 5px;">Kinetic parameter estimation</li>
+              </ul>
+            </li>
+            <li style="margin-bottom: 8px;"><strong>Quality Control Measures:</strong>
+              <ul style="margin-top: 8px; padding-left: 20px;">
+                <li style="margin-bottom: 5px;">Triple biological replicates for all experiments</li>
+                <li style="margin-bottom: 5px;">Standardized protocols across all research phases</li>
+                <li style="margin-bottom: 5px;">Independent verification by external laboratories</li>
+                <li style="margin-bottom: 5px;">Comprehensive data validation procedures</li>
+              </ul>
+            </li>
+          </ul>
+
+          <h3 style="color: #1976d2; margin: 25px 0 15px 0;">🎯 Future Applications</h3>
+          <ol style="line-height: 1.8; padding-left: 25px;">
+            <li style="margin-bottom: 8px;"><strong>Pharmaceutical Industry:</strong> Scale-up for therapeutic protein production and drug development pipelines</li>
+            <li style="margin-bottom: 8px;"><strong>Industrial Biotechnology:</strong> Implementation in large-scale biomanufacturing facilities for sustainable chemical production</li>
+            <li style="margin-bottom: 8px;"><strong>Environmental Applications:</strong> Deployment in bioremediation projects and waste treatment systems</li>
+            <li style="margin-bottom: 8px;"><strong>Agricultural Biotechnology:</strong> Development of enhanced crop protection and soil improvement solutions</li>
+            <li style="margin-bottom: 8px;"><strong>Food Technology:</strong> Integration into food processing and preservation systems for improved safety and shelf-life</li>
+          </ol>
+        </div>
+      `;
+
+      const sampleContent = [
+        `<p>This article explores the cutting-edge developments in biotechnology and their transformative impact on various industries.</p><img src="${randomImage}" alt="Biotechnology research" style="width: 100%; height: auto; margin: 20px 0;" /><h2>Introduction</h2><p>In recent years, biotechnology has emerged as one of the most promising fields for addressing global challenges. From healthcare to environmental sustainability, the applications are vast and revolutionary.</p>${enhancedListsHtml}<h2>Research Video</h2>${videoHtml}${pdfViewerHtml}${sampleTableHtml}${wordDocHtml}${downloadFileHtml}<h2>Future Perspectives</h2><p>Looking ahead, we can expect continued innovation and integration of biotechnological solutions across multiple sectors. The potential for positive impact on society remains immense.</p><p>Stay tuned for more insights and developments in this exciting field!</p>`,
+        
+        `<p>Understanding the mechanisms and applications of advanced biological systems in modern research and industry.</p><h2>Overview</h2><p>The intersection of biology and technology continues to yield remarkable innovations that are reshaping our understanding of life itself.</p><img src="${randomImage}" alt="Laboratory equipment" style="width: 100%; height: auto; margin: 20px 0;" /><h2>Technical Insights</h2><p>Key areas of focus include advanced analytical techniques and computational approaches:</p>${enhancedListsHtml}<blockquote><p>"Science is not only a disciple of reason but, also, one of romance and passion." - Stephen Hawking</p></blockquote><h2>Video Tutorial</h2>${videoHtml}${wordDocHtml}${sampleTableHtml}${pdfViewerHtml}<h2>Applications</h2><p>These technologies find applications in pharmaceuticals, agriculture, environmental science, and beyond. The potential for creating positive change is limitless.</p>${downloadFileHtml}<h2>Conclusion</h2><p>As we continue to push the boundaries of what's possible, interdisciplinary collaboration remains key to unlocking new possibilities.</p>`,
+        
+        `<p>An in-depth exploration of innovative approaches and methodologies in contemporary scientific research.</p><h2>Research Background</h2><p>This study examines the latest developments and their implications for future research directions.</p><img src="${randomImage}" alt="Scientific research" style="width: 100%; height: auto; margin: 20px 0;" />${downloadFileHtml}<h2>Methodology</h2><p>Our comprehensive research approach incorporated multiple analytical techniques and quality control measures:</p>${enhancedListsHtml}${wordDocHtml}<h2>Results and Discussion</h2><p>The findings reveal significant potential for advancing our understanding of complex biological systems. Key insights include improved efficiency, enhanced accuracy, and broader applicability of developed methods.</p>${sampleTableHtml}<h2>Research Demonstration</h2>${videoHtml}${pdfViewerHtml}<h2>Future Work</h2><p>Continued research in this area will focus on optimization, scalability, and real-world implementation of these innovative approaches.</p>`
+      ];
+
+      // Sample tags
+      const sampleTagNames = [
+        'biotechnology', 'research', 'innovation', 'science', 'laboratory',
+        'molecular biology', 'genetics', 'bioengineering', 'pharmaceuticals',
+        'synthetic biology', 'CRISPR', 'protein engineering', 'fermentation',
+        'bioinformatics', 'systems biology', 'metabolic engineering'
+      ];
+
+      // Select 3-5 random tags
+      const numberOfTags = Math.floor(Math.random() * 3) + 3; // 3-5 tags
+      const selectedTagNames = [];
+      
+      for (let i = 0; i < numberOfTags; i++) {
+        const randomTag = sampleTagNames[Math.floor(Math.random() * sampleTagNames.length)];
+        if (!selectedTagNames.includes(randomTag)) {
+          selectedTagNames.push(randomTag);
+        }
+      }
+
+      // Find existing tags or create tag objects
+      const existingTags = tags.filter(tag => selectedTagNames.includes(tag.name));
+      const newTagNames = selectedTagNames.filter(name => !existingTags.some(tag => tag.name === name));
+      
+      // Create tag objects for new tags
+      const newTags = newTagNames.map((name, index) => ({
+        id: `temp_${index}`,
+        name: name
+      }));
+
+      const allSelectedTags = [...existingTags, ...newTags];
+      // Convert to string array for Autocomplete compatibility
+      const tagNames = allSelectedTags.map(tag => tag.name);
+      setSelectedTags(tagNames);
+
+      const randomTitle = sampleTitles[Math.floor(Math.random() * sampleTitles.length)];
+      const randomContent = sampleContent[Math.floor(Math.random() * sampleContent.length)];
+      const slug = slugify(randomTitle, { lower: true, strict: true });
+      const excerpt = 'This is a comprehensive sample post generated to demonstrate the full content management system capabilities. It includes various formatting elements, images, videos, PDF documents, Word files, downloadable resources, data tables, enhanced lists with nested structures, and professional layouts commonly found in scientific and technical blog posts.';
+
+      // Set all form values
+      console.log('Setting form values:', { randomTitle, slug, randomContent: randomContent.length }); // Debug log
+      setValue('title', randomTitle, { shouldValidate: true });
+      setValue('slug', slug, { shouldValidate: true });
+      setValue('content', randomContent, { shouldValidate: true });
+      setValue('excerpt', excerpt, { shouldValidate: true });
+      
+      // Update Draft.js editor with the new content
+      setEditorState(htmlToEditorState(randomContent));
+      
+      // Trigger form validation to ensure all fields are properly validated
+      await trigger(['title', 'slug', 'content']);
+      
+      console.log('Form values set, current watch values:', { 
+        title: watch('title'), 
+        slug: watch('slug'), 
+        content: watch('content')?.length 
+      }); // Debug log
+      
+      // Set default values for required fields if not already set
+      if (!watch('status')) {
+        setValue('status', 'draft');
+      }
+      if (!watch('post_type')) {
+        setValue('post_type', 'post');
+      }
+      if (!watch('comment_status')) {
+        setValue('comment_status', 'open');
+      }
+      
+      // Trigger form validation after setting all values
+      setTimeout(() => {
+        console.log('Triggering form validation...'); // Debug log
+        trigger(['title', 'slug']);
+      }, 100);
+      
+      toast.success('AI-generated sample content created successfully with media, documents, tables, lists, and tags!');
+    } catch (error) {
+      console.error('Error generating sample content:', error);
+      toast.error('Failed to generate AI sample content. Please try again.');
+    }
+  };
+
+  // Store TinyMCE editor instance
+  const [editorState, setEditorState] = useState(EditorState.createEmpty());
+
+  // Handle media selection from media library for content insertion
+  const handleContentMediaSelect = (media) => {
+    // For React Draft Wysiwyg, we'll handle image insertion through the image toolbar button
+    // User can paste the image URL or use the built-in image functionality
+    console.log('Media selected:', media.url);
+    setMediaPickerOpen(false);
+  };
+
+
+  // React Draft Wysiwyg configuration
+  const editorToolbarConfig = {
+    options: ['inline', 'blockType', 'fontSize', 'fontFamily', 'list', 'textAlign', 'colorPicker', 'link', 'embedded', 'emoji', 'image', 'remove', 'history'],
+    inline: {
+      inDropdown: false,
+      className: undefined,
+      component: undefined,
+      dropdownClassName: undefined,
+      options: ['bold', 'italic', 'underline', 'strikethrough', 'monospace', 'superscript', 'subscript']
+    },
+    blockType: {
+      inDropdown: true,
+      options: ['Normal', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'Blockquote', 'Code']
+    },
+    fontSize: {
+      options: [8, 9, 10, 11, 12, 14, 16, 18, 24, 30, 36, 48, 60, 72, 96]
+    },
+    fontFamily: {
+      options: ['Arial', 'Georgia', 'Impact', 'Tahoma', 'Times New Roman', 'Verdana']
+    },
+    list: {
+      inDropdown: false,
+      className: undefined,
+      component: undefined,
+      dropdownClassName: undefined,
+      options: ['unordered', 'ordered', 'indent', 'outdent']
+    },
+    textAlign: {
+      inDropdown: false,
+      className: undefined,
+      component: undefined,
+      dropdownClassName: undefined,
+      options: ['left', 'center', 'right', 'justify']
+    },
+    colorPicker: {
+      icon: undefined,
+      className: undefined,
+      component: undefined,
+      popupClassName: undefined,
+      colors: ['rgb(97,189,109)', 'rgb(26,188,156)', 'rgb(84,172,210)', 'rgb(44,130,201)',
+        'rgb(147,101,184)', 'rgb(71,85,119)', 'rgb(204,204,204)', 'rgb(65,168,95)', 'rgb(0,168,133)',
+        'rgb(61,142,185)', 'rgb(41,105,176)', 'rgb(85,57,130)', 'rgb(40,50,78)', 'rgb(0,0,0)',
+        'rgb(247,218,100)', 'rgb(251,160,38)', 'rgb(235,107,86)', 'rgb(226,80,65)', 'rgb(163,143,132)',
+        'rgb(239,239,239)', 'rgb(255,255,255)', 'rgb(250,197,28)', 'rgb(243,121,52)', 'rgb(209,72,65)',
+        'rgb(184,49,47)', 'rgb(124,112,107)', 'rgb(209,213,216)']
+    },
+    link: {
+      inDropdown: false,
+      className: undefined,
+      component: undefined,
+      popupClassName: undefined,
+      dropdownClassName: undefined,
+      showOpenOptionOnHover: true,
+      defaultTargetOption: '_self',
+      options: ['link', 'unlink'],
+      linkCallback: undefined
+    },
+    embedded: {
+      icon: undefined,
+      className: undefined,
+      component: undefined,
+      popupClassName: undefined,
+      embedCallback: undefined,
+      defaultSize: {
+        height: 'auto',
+        width: 'auto'
+      }
+    },
+    image: {
+      icon: undefined,
+      className: undefined,
+      component: undefined,
+      popupClassName: undefined,
+      urlEnabled: true,
+      uploadEnabled: false,
+      alignmentEnabled: true,
+      uploadCallback: undefined,
+      previewImage: false,
+      inputAccept: 'image/gif,image/jpeg,image/jpg,image/png,image/svg',
+      alt: { present: false, mandatory: false },
+      defaultSize: {
+        height: 'auto',
+        width: 'auto'
+      }
+    },
+    remove: { icon: undefined, className: undefined, component: undefined },
+    history: {
+      inDropdown: false,
+      className: undefined,
+      component: undefined,
+      dropdownClassName: undefined,
+      options: ['undo', 'redo']
+    }
+  };
+
+  // Convert HTML to Draft.js EditorState
+  const htmlToEditorState = (html) => {
+    if (!html) return EditorState.createEmpty();
+    const contentBlock = htmlToDraft(html);
+    if (contentBlock) {
+      const contentState = ContentState.createFromBlockArray(contentBlock.contentBlocks);
+      return EditorState.createWithContent(contentState);
+    }
+    return EditorState.createEmpty();
+  };
+
+  // Convert Draft.js EditorState to HTML
+  const editorStateToHtml = (editorState) => {
+    return draftToHtml(convertToRaw(editorState.getCurrentContent()));
   };
 
   if (loadingPost) {
@@ -260,6 +929,18 @@ const PostEditor = () => {
           {/* Main Content */}
           <Grid item xs={12} md={8}>
             <Paper sx={{ p: 3 }}>
+              <Box sx={{ mb: 2 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<AutoFixHigh />}
+                  onClick={generateSampleContent}
+                  sx={{ mb: 2 }}
+                >
+                  AI Generate Sample Content
+                </Button>
+              </Box>
+
               <TextField
                 fullWidth
                 label="Title"
@@ -278,6 +959,7 @@ const PostEditor = () => {
                 sx={{ mb: 3 }}
               />
 
+
               {previewMode ? (
                 <Box
                   sx={{
@@ -292,18 +974,42 @@ const PostEditor = () => {
                   dangerouslySetInnerHTML={{ __html: watchedContent }}
                 />
               ) : (
-                <Controller
-                  name="content"
-                  control={control}
-                  render={({ field }) => (
-                    <ReactQuill
-                      {...field}
-                      theme="snow"
-                      modules={modules}
-                      style={{ minHeight: '300px' }}
-                    />
-                  )}
-                />
+                <>
+                  <Controller
+                    name="content"
+                    control={control}
+                    rules={{ required: 'Content is required' }}
+                    render={({ field }) => (
+                      <Box sx={{ 
+                        position: 'relative',
+                        border: '1px solid #ddd',
+                        borderRadius: 1,
+                        minHeight: 400,
+                        '& .rdw-editor-wrapper': {
+                          border: 'none'
+                        },
+                        '& .rdw-editor-main': {
+                          minHeight: 350,
+                          padding: '16px'
+                        }
+                      }}>
+                        <Editor
+                          editorState={editorState}
+                          wrapperClassName="demo-wrapper"
+                          editorClassName="demo-editor"
+                          toolbarClassName="demo-toolbar"
+                          toolbar={editorToolbarConfig}
+                          onEditorStateChange={(newEditorState) => {
+                            setEditorState(newEditorState);
+                            const html = editorStateToHtml(newEditorState);
+                            field.onChange(html);
+                          }}
+                          placeholder="Write your blog content here..."
+                        />
+                      </Box>
+                    )}
+                  />
+                </>
               )}
 
               <TextField
@@ -406,7 +1112,17 @@ const PostEditor = () => {
                   Save Draft
                 </Button>
                 <Button
-                  onClick={handleSubmit(handlePublish)}
+                  onClick={(e) => {
+                    console.log('🔘 PUBLISH BUTTON CLICKED');
+                    console.log('📋 Current form data:', watch());
+                    console.log('❌ Current form errors:', errors);
+                    console.log('📝 Editor state:', editorState);
+                    console.log('🏷️ Selected tags:', selectedTags);
+                    console.log('🔄 About to call handleSubmit(handlePublish)');
+                    
+                    const result = handleSubmit(handlePublish)(e);
+                    console.log('📤 handleSubmit result:', result);
+                  }}
                   variant="contained"
                   startIcon={<Publish />}
                   disabled={loading}
@@ -549,11 +1265,14 @@ const PostEditor = () => {
       {/* Media Library Picker */}
       <MediaLibraryPicker
         open={mediaPickerOpen}
-        onClose={() => setMediaPickerOpen(false)}
-        onSelect={handleMediaSelect}
+        onClose={() => {
+          setMediaPickerOpen(false);
+          window.tinymceCallback = null; // Clear callback if cancelled
+        }}
+        onSelect={window.tinymceCallback ? handleContentMediaSelect : handleMediaSelect}
         selectedMedia={selectedFeaturedImage}
         allowedTypes={['image']}
-        title="Select Featured Image"
+        title={window.tinymceCallback ? "Insert Image" : "Select Featured Image"}
       />
     </Box>
   );

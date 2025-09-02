@@ -240,11 +240,13 @@ const PostPage = () => {
                           color: 'inherit',
                           transition: 'all 0.2s ease-in-out',
                           '&:hover': {
-                            transform: 'translateX(4px)',
+                            '& .category-name': {
+                              color: 'primary.main',
+                            },
                           },
                         }}
                       >
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        <Typography variant="body2" className="category-name" sx={{ fontWeight: 500, transition: 'color 0.2s ease-in-out' }}>
                           {category.name}
                         </Typography>
                         <ChevronRight sx={{ fontSize: 16, opacity: 0.7 }} />
@@ -388,14 +390,12 @@ const PostPage = () => {
               component={Link}
               to={`/search?q=${encodeURIComponent(tag.name)}`}
               clickable
-              variant="outlined"
               size="small"
               sx={{
                 textDecoration: 'none',
                 '&:hover': {
                   backgroundColor: 'primary.light',
                   color: 'white',
-                  borderColor: 'primary.light',
                 }
               }}
             />
@@ -480,14 +480,12 @@ const PostPage = () => {
                   component={Link}
                   to={`/search?q=${encodeURIComponent(tag.name)}`}
                   clickable
-                  variant="outlined"
                   size="small"
                   sx={{
                     textDecoration: 'none',
                     '&:hover': {
                       backgroundColor: 'primary.light',
                       color: 'white',
-                      borderColor: 'primary.light',
                     }
                   }}
                 />

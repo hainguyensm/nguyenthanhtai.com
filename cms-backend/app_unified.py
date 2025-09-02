@@ -34,14 +34,27 @@ else:
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-cms-secret-key-change-this-in-production')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'uploads')
 
 # Create upload folders
 for folder in ['uploads', 'uploads/images', 'uploads/documents', 'uploads/themes', 'uploads/plugins']:
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], folder.split('/')[-1]), exist_ok=True)
 
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4', 'mp3', 'zip', 'doc', 'docx'}
+ALLOWED_EXTENSIONS = {
+    # Images
+    'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'tiff',
+    # Videos
+    'mp4', 'webm', 'ogg', 'avi', 'mov', 'wmv', 'flv', 'mkv',
+    # Audio
+    'mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac',
+    # Documents
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+    # Archives
+    'zip', 'rar', '7z', 'tar', 'gz',
+    # Text
+    'txt', 'csv', 'json', 'xml'
+}
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
