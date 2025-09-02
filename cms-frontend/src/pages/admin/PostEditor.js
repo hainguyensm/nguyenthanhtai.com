@@ -45,7 +45,6 @@ import slugify from 'slugify';
 import apiService from '../../services/api';
 import toast from 'react-hot-toast';
 import MediaLibraryPicker from '../../components/MediaLibraryPicker';
-import PDFViewer from '../../components/PDFViewer';
 
 const PostEditor = () => {
   const [loading, setLoading] = useState(false);
@@ -350,11 +349,8 @@ const PostEditor = () => {
         setValue('featured_image', randomImage);
       }
 
-      // Get specific PDF or fallback to random PDF
-      const specificPdf = pdfMedia.find(media => media.url && media.url.includes('f0853e945c2a41b597772f0c87764fd4.pdf'));
-      if (specificPdf) {
-        randomPdf = specificPdf;
-      } else if (pdfMedia.length > 0) {
+      // Get random PDF
+      if (pdfMedia.length > 0) {
         const randomPdfMedia = pdfMedia[Math.floor(Math.random() * pdfMedia.length)];
         randomPdf = randomPdfMedia;
       }
@@ -411,76 +407,28 @@ const PostEditor = () => {
           </div>`;
       }
 
-      // Build enhanced PDF content with research focus
+      // Build PDF viewer HTML with multiple viewing options
       const pdfViewerHtml = randomPdf ? 
-        `<h2>📚 Research Publication & Documentation</h2>
-        <div style="margin: 20px 0; border: 2px solid #1976d2; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(25,118,210,0.15);">
-          <div style="background: linear-gradient(135deg, #1976d2, #42a5f5); color: white; padding: 16px;">
-            <div style="display: flex; align-items: center; margin-bottom: 8px;">
-              <span style="font-size: 1.5em; margin-right: 12px;">📄</span>
-              <div>
-                <div style="font-weight: bold; font-size: 1.1em;">${randomPdf.filename || 'Research Document.pdf'}</div>
-                <div style="opacity: 0.9; font-size: 0.9em;">Official Research Publication</div>
-              </div>
+        `<h2>Research Document</h2>
+        <div style="margin: 20px 0; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+          <div style="background: #f5f5f5; padding: 12px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center;">
+              <span style="color: #1976d2; font-weight: bold; margin-right: 10px;">📄</span>
+              <span style="font-weight: bold;">${randomPdf.filename || 'Research Document.pdf'}</span>
             </div>
-            <div style="opacity: 0.95; font-size: 0.95em; line-height: 1.4;">
-              This document contains comprehensive research findings, methodological approaches, and detailed experimental results. 
-              Key topics include advanced analytical techniques, innovative biotechnological applications, and future research directions.
+            <div>
+              <a href="${randomPdf.url}" target="_blank" style="background: #1976d2; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; margin-right: 8px; font-size: 0.9em;">View Full Size</a>
+              <a href="${randomPdf.url}" download style="background: #4caf50; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 0.9em;">Download</a>
             </div>
           </div>
-          
-          <div style="position: relative; background: #f8f9fa;">
-            <iframe src="${randomPdf.url}#toolbar=1&navpanes=1&scrollbar=1&zoom=75" width="100%" height="700" frameborder="0" style="display: block; border: none;"></iframe>
-            <div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 8px;">
-              <a href="/pdf/${randomPdf.filename || 'research-document.pdf'}?url=${encodeURIComponent(randomPdf.url)}&title=${encodeURIComponent(randomPdf.filename || 'Research Document')}" style="background: rgba(25,118,210,0.9); color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px; font-size: 0.9em; font-weight: 500; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px;">
-                🔍 PDF Viewer
-              </a>
-              <a href="${randomPdf.url}" download style="background: rgba(76,175,80,0.9); color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px; font-size: 0.9em; font-weight: 500; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px;">
-                ⬇️ Download
-              </a>
+          <div style="position: relative;">
+            <iframe src="${randomPdf.url}#toolbar=1&navpanes=1&scrollbar=1" width="100%" height="600" frameborder="0" style="display: block;"></iframe>
+            <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 8px 12px; border-radius: 4px; font-size: 0.8em;">
+              PDF Viewer - Use browser controls to navigate
             </div>
           </div>
-          
-          <div style="background: #e3f2fd; padding: 12px; border-top: 1px solid #bbdefb;">
-            <div style="color: #1565c0; font-size: 0.9em; line-height: 1.4;">
-              <strong>📋 Document Highlights:</strong> This research publication provides in-depth analysis of current methodologies, 
-              experimental validation of key hypotheses, and comprehensive data supporting the presented conclusions. 
-              The document serves as a foundational reference for understanding the latest developments in the field.
-            </div>
-          </div>
-        </div>
-        
-        <h3 style="color: #1976d2; margin-top: 30px;">📖 Key Research Insights from the Document</h3>
-        <div style="background: #f5f7ff; border-left: 4px solid #1976d2; padding: 20px; margin: 15px 0; border-radius: 0 8px 8px 0;">
-          <ul style="line-height: 1.8; margin: 0; padding-left: 20px;">
-            <li><strong>Methodological Innovation:</strong> The document presents novel approaches to data collection and analysis, incorporating cutting-edge technologies and statistical methods for biotechnology research.</li>
-            <li><strong>Experimental Validation:</strong> Comprehensive experimental results validate the theoretical framework, with detailed protocols for fermentation optimization and protein engineering applications.</li>
-            <li><strong>Practical Applications:</strong> Clear pathways for implementing research findings in industrial biotechnology, including scalability considerations for biomanufacturing processes.</li>
-            <li><strong>Advanced Analytics:</strong> Integration of bioinformatics tools and machine learning algorithms for enhanced data interpretation and predictive modeling in biological systems.</li>
-            <li><strong>Future Research Directions:</strong> Identification of emerging opportunities in synthetic biology, CRISPR applications, and sustainable bioprocess development.</li>
-          </ul>
-        </div>
-        
-        <h3 style="color: #2e7d32; margin-top: 25px;">🔬 Detailed Analysis Referenced in PDF</h3>
-        <div style="background: #f1f8e9; border: 1px solid #c8e6c9; border-radius: 8px; padding: 20px; margin: 15px 0;">
-          <p style="line-height: 1.7; margin-bottom: 15px;">
-            The comprehensive research document provides extensive coverage of advanced biotechnological methodologies and their practical implementations. 
-            Key sections include detailed experimental protocols, statistical analysis of results, and comparative studies with existing technologies.
-          </p>
-          <div style="background: white; border-left: 3px solid #4caf50; padding: 15px; margin: 15px 0;">
-            <p style="margin: 0; font-style: italic; color: #2e7d32;">
-              "This research represents a significant advancement in our understanding of metabolic engineering principles and their application 
-              to sustainable biotechnology solutions. The methodologies presented here offer reproducible pathways for scaling laboratory 
-              innovations to industrial applications." - Research Team Summary
-            </p>
-          </div>
-          <p style="line-height: 1.7; margin-top: 15px;">
-            For the complete methodology, detailed experimental procedures, and comprehensive results analysis, 
-            <a href="/pdf/${randomPdf.filename || 'research-document.pdf'}?url=${encodeURIComponent(randomPdf.url)}&title=${encodeURIComponent('Comprehensive Research Publication')}" style="color: #1976d2; text-decoration: none; font-weight: bold;">
-            refer to the full research publication ↗️</a> available through our integrated PDF viewer system.
-          </p>
         </div>` : 
-        '<h2>📚 Research Documentation</h2><div style="margin: 20px 0; padding: 30px; border: 2px dashed #1976d2; border-radius: 12px; text-align: center; background: #f5f7ff;"><div style="font-size: 3em; margin-bottom: 16px;">📄</div><p style="font-size: 1.1em; font-weight: bold; color: #1976d2; margin-bottom: 8px;">Advanced PDF Viewer</p><p style="color: #666; line-height: 1.6;">Comprehensive research documents and publications would be displayed here using our enhanced PDF viewing system when available in the media library. The viewer supports zooming, navigation, and full-screen viewing capabilities.</p></div>';
+        '<h2>Research Document</h2><div style="margin: 20px 0; padding: 20px; border: 2px dashed #ddd; border-radius: 8px; text-align: center; color: #666;"><p><strong>📄 PDF Viewer</strong></p><p>PDF documents would be displayed here when available in the media library.</p></div>';
 
       // Build Word document HTML
       const wordDocHtml = randomWord ? 
