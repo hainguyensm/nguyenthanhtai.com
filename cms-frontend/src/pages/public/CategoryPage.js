@@ -151,7 +151,7 @@ const CategoryPage = () => {
 
       {/* Category Header */}
       <Box textAlign="center" sx={{ mb: 6 }}>
-        <Typography variant="h3" component="h1" gutterBottom>
+        <Typography variant="h4" component="h1" gutterBottom>
           {category?.name || slug}
         </Typography>
         {category?.description && (
@@ -256,9 +256,6 @@ const CategoryPage = () => {
       {/* Posts Grid */}
       {posts.length > 0 ? (
         <>
-          <Typography variant="h4" component="h2" gutterBottom sx={{ mb: 3 }}>
-            Posts in {category?.name || slug}
-          </Typography>
           
           <Grid container spacing={3}>
             {posts.map((post) => (
