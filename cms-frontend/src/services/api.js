@@ -105,6 +105,11 @@ class ApiService {
     return response.data;
   };
 
+  getFeaturedKeywords = async () => {
+    const response = await this.client.get('/featured-keywords');
+    return response.data;
+  };
+
   // Users endpoints
   getUsers = async (params = {}) => {
     const response = await this.client.get('/users', { params });

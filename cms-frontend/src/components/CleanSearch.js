@@ -16,8 +16,23 @@ const CleanSearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  const [featuredKeywords] = useState(['biotechnology', 'metabolic engineering', 'synthetic biology', 'bioprocessing', 'fermentation', 'protein expression']);
+  const [featuredKeywords, setFeaturedKeywords] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchFeaturedKeywords();
+  }, []);
+
+  const fetchFeaturedKeywords = async () => {
+    try {
+      const keywords = await apiService.getFeaturedKeywords();
+      setFeaturedKeywords(keywords);
+    } catch (error) {
+      console.error('Failed to fetch featured keywords:', error);
+      // Fallback to static keywords if API fails
+      setFeaturedKeywords(['biotechnology', 'metabolic engineering', 'synthetic biology', 'bioprocessing', 'fermentation']);
+    }
+  };
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
