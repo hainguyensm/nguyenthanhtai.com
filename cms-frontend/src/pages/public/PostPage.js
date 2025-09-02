@@ -237,12 +237,9 @@ const PostPage = () => {
                           p: 1.5,
                           borderRadius: 1,
                           textDecoration: 'none',
-                          color: getCategoryColor(category.id).text,
-                          backgroundColor: getCategoryColor(category.id).bg,
+                          color: 'inherit',
                           transition: 'all 0.2s ease-in-out',
                           '&:hover': {
-                            backgroundColor: getCategoryColor(category.id).hover,
-                            color: getCategoryColor(category.id).hoverText,
                             transform: 'translateX(4px)',
                           },
                         }}
@@ -376,11 +373,9 @@ const PostPage = () => {
               clickable
               sx={{ 
                 textDecoration: 'none',
-                backgroundColor: getCategoryColor(post.category.id).bg,
-                color: getCategoryColor(post.category.id).text,
                 '&:hover': {
-                  backgroundColor: getCategoryColor(post.category.id).hover,
-                  color: getCategoryColor(post.category.id).hoverText,
+                  backgroundColor: 'primary.light',
+                  color: 'white',
                 }
               }}
             />

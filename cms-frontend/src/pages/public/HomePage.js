@@ -134,12 +134,10 @@ const HomePage = () => {
                           p: 1.5,
                           borderRadius: 1,
                           textDecoration: 'none',
-                          color: getCategoryColor(category.id).text,
-                          backgroundColor: getCategoryColor(category.id).bg,
+                          color: 'inherit',
+                          textDecoration: 'none',
                           transition: 'all 0.2s ease-in-out',
                           '&:hover': {
-                            backgroundColor: getCategoryColor(category.id).hover,
-                            color: getCategoryColor(category.id).hoverText,
                             transform: 'translateX(4px)',
                           },
                         }}
@@ -304,11 +302,9 @@ const HomePage = () => {
                                 label={post.category.name}
                                 sx={{ 
                                   mb: 1.5,
-                                  backgroundColor: getCategoryColor(post.category.id).bg,
-                                  color: getCategoryColor(post.category.id).text,
                                   '&:hover': {
-                                    backgroundColor: getCategoryColor(post.category.id).hover,
-                                    color: getCategoryColor(post.category.id).hoverText,
+                                    backgroundColor: 'primary.light',
+                                    color: 'white',
                                   }
                                 }}
                               />

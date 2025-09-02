@@ -186,16 +186,9 @@ const CategoryPage = () => {
                         p: 1.5,
                         borderRadius: 1,
                         textDecoration: 'none',
-                        color: cat.slug === slug ? 
-                          getCategoryColor(cat.id).hoverText : 
-                          getCategoryColor(cat.id).text,
-                        backgroundColor: cat.slug === slug ? 
-                          getCategoryColor(cat.id).hover : 
-                          getCategoryColor(cat.id).bg,
+                        color: 'inherit',
                         transition: 'all 0.2s ease-in-out',
                         '&:hover': {
-                          backgroundColor: getCategoryColor(cat.id).hover,
-                          color: getCategoryColor(cat.id).hoverText,
                           transform: 'translateX(4px)',
                         },
                       }}
