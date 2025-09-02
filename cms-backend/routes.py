@@ -891,6 +891,37 @@ def get_posts_list():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Tags Routes
+@app.route('/api/tags', methods=['GET'])
+def get_tags():
+    """Get all unique tags from all published posts"""
+    try:
+        # Get all published posts with their tags
+        posts = Post.query.filter_by(status='published').all()
+        
+        # Collect all unique tags with post count
+        tag_dict = {}
+        for post in posts:
+            for tag in post.tags:
+                if tag.id not in tag_dict:
+                    tag_dict[tag.id] = {
+                        'id': tag.id,
+                        'name': tag.name,
+                        'slug': tag.slug,
+                        'description': tag.description,
+                        'post_count': 1
+                    }
+                else:
+                    tag_dict[tag.id]['post_count'] += 1
+        
+        # Convert to list and sort by post count (most used first)
+        tags_list = list(tag_dict.values())
+        tags_list.sort(key=lambda x: x['post_count'], reverse=True)
+        
+        return jsonify(tags_list)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Theme Routes
 @app.route('/api/themes/active', methods=['GET'])
 def get_active_theme():

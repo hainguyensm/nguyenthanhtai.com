@@ -34,14 +34,18 @@ import {
   Link as LinkIcon,
   Send,
   Person,
+  Search,
+  LocalOffer,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import apiService from '../../services/api';
 import getCategoryColor from '../../utils/categoryColors';
+import CleanSearch from '../../components/CleanSearch';
 
 const PostPage = () => {
   const [post, setPost] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [tags, setTags] = useState([]);
   const [recentPosts, setRecentPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -56,6 +60,7 @@ const PostPage = () => {
   useEffect(() => {
     fetchPost();
     fetchCategories();
+    fetchTags();
     fetchRecentPosts();
     fetchComments();
     // Check if user has liked this post (from localStorage)
@@ -86,6 +91,15 @@ const PostPage = () => {
       setCategories(response);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
+    }
+  };
+
+  const fetchTags = async () => {
+    try {
+      const response = await apiService.getTags();
+      setTags(response || []);
+    } catch (error) {
+      console.error('Failed to fetch tags:', error);
     }
   };
 
@@ -173,7 +187,7 @@ const PostPage = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 4, px: 3 }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
           <CircularProgress />
         </Box>
@@ -183,7 +197,7 @@ const PostPage = () => {
 
   if (error || !post) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 4, px: 3 }}>
         <Alert severity="error">{error || 'Post not found'}</Alert>
       </Container>
     );
@@ -197,10 +211,93 @@ const PostPage = () => {
         <meta name="keywords" content={post.meta_keywords} />
       </Helmet>
 
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 4, px: 3 }}>
         <Grid container spacing={4}>
+          {/* Left Sidebar - Categories */}
+          <Grid item xs={12} md={3}>
+            <Box sx={{ position: 'sticky', top: 80 }}>
+              {/* Categories */}
+              <Paper elevation={2} sx={{ p: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Category color="primary" />
+                  Categories
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                {categories.length > 0 ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {categories.map((category) => (
+                      <Box
+                        key={category.id}
+                        component={Link}
+                        to={`/category/${category.slug}`}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          p: 1.5,
+                          borderRadius: 1,
+                          textDecoration: 'none',
+                          color: getCategoryColor(category.id).text,
+                          backgroundColor: getCategoryColor(category.id).bg,
+                          transition: 'all 0.2s ease-in-out',
+                          '&:hover': {
+                            backgroundColor: getCategoryColor(category.id).hover,
+                            color: getCategoryColor(category.id).hoverText,
+                            transform: 'translateX(4px)',
+                          },
+                        }}
+                      >
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {category.name}
+                        </Typography>
+                        <ChevronRight sx={{ fontSize: 16, opacity: 0.7 }} />
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No categories available
+                  </Typography>
+                )}
+              </Paper>
+
+              {/* Tags Widget */}
+              <Paper elevation={2} sx={{ p: 3, mt: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <LocalOffer color="primary" />
+                  Popular Tags
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                {tags.length > 0 ? (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {tags.slice(0, 15).map((tag) => (
+                      <Chip
+                        key={tag.id}
+                        label={tag.name}
+                        component={Link}
+                        to={`/search?q=${encodeURIComponent(tag.name)}`}
+                        clickable
+                        size="small"
+                        sx={{
+                          '&:hover': {
+                            backgroundColor: 'primary.light',
+                            color: 'white',
+                          },
+                        }}
+                      />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No tags available
+                  </Typography>
+                )}
+              </Paper>
+            </Box>
+          </Grid>
+
           {/* Main Content */}
-          <Grid item xs={12} md={8}>
+          <Grid item xs={12} md={6}>
             {/* Breadcrumbs */}
             <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 3 }}>
           <Link
@@ -293,8 +390,19 @@ const PostPage = () => {
             <Chip
               key={tag.id}
               label={tag.name}
+              component={Link}
+              to={`/search?q=${encodeURIComponent(tag.name)}`}
+              clickable
               variant="outlined"
               size="small"
+              sx={{
+                textDecoration: 'none',
+                '&:hover': {
+                  backgroundColor: 'primary.light',
+                  color: 'white',
+                  borderColor: 'primary.light',
+                }
+              }}
             />
           ))}
         </Box>
@@ -374,8 +482,19 @@ const PostPage = () => {
                 <Chip
                   key={tag.id}
                   label={tag.name}
+                  component={Link}
+                  to={`/search?q=${encodeURIComponent(tag.name)}`}
+                  clickable
                   variant="outlined"
                   size="small"
+                  sx={{
+                    textDecoration: 'none',
+                    '&:hover': {
+                      backgroundColor: 'primary.light',
+                      color: 'white',
+                      borderColor: 'primary.light',
+                    }
+                  }}
                 />
               ))}
             </Box>
@@ -546,53 +665,20 @@ const PostPage = () => {
         </Box>
           </Grid>
 
-          {/* Sidebar */}
-          <Grid item xs={12} md={4}>
-            <Box sx={{ position: 'sticky', top: 24 }}>
-              {/* Categories */}
+          {/* Right Sidebar */}
+          <Grid item xs={12} md={3}>
+            <Box sx={{ position: 'sticky', top: 80 }}>
+
+              {/* Search */}
               <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Category color="primary" />
-                  Categories
+                  <Search color="primary" />
+                  Search Posts
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
-                {categories.length > 0 ? (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {categories.map((category) => (
-                      <Box
-                        key={category.id}
-                        component={Link}
-                        to={`/category/${category.slug}`}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          p: 1.5,
-                          borderRadius: 1,
-                          textDecoration: 'none',
-                          color: getCategoryColor(category.id).text,
-                          backgroundColor: getCategoryColor(category.id).bg,
-                          transition: 'all 0.2s ease-in-out',
-                          '&:hover': {
-                            backgroundColor: getCategoryColor(category.id).hover,
-                            color: getCategoryColor(category.id).hoverText,
-                            transform: 'translateX(4px)',
-                          },
-                        }}
-                      >
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {category.name}
-                        </Typography>
-                        <ChevronRight sx={{ fontSize: 16, opacity: 0.7 }} />
-                      </Box>
-                    ))}
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    No categories available
-                  </Typography>
-                )}
+                <CleanSearch />
               </Paper>
+
 
               {/* Recent Posts Widget */}
               <Paper elevation={2} sx={{ p: 3 }}>

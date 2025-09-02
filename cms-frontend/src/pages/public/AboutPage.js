@@ -3,7 +3,7 @@ import { Container, Typography, Paper, Box } from '@mui/material';
 
 const AboutPage = () => {
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
+    <Container maxWidth={false} sx={{ py: 6, px: 3 }}>
       <Paper elevation={1} sx={{ p: 4 }}>
         <Typography variant="h3" component="h1" gutterBottom>
           About Us

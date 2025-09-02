@@ -11,6 +11,7 @@ import PostPage from './pages/public/PostPage';
 import CategoryPage from './pages/public/CategoryPage';
 import AboutPage from './pages/public/AboutPage';
 import ContactPage from './pages/public/ContactPage';
+import SearchResultsPage from './pages/public/SearchResultsPage';
 
 // Auth Pages
 import LoginPage from './pages/auth/LoginPage';
@@ -39,6 +40,7 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="post/:slug" element={<PostPage />} />
           <Route path="category/:slug" element={<CategoryPage />} />
+          <Route path="search" element={<SearchResultsPage />} />
           <Route path="about" element={<AboutPage />} />
           <Route path="contact" element={<ContactPage />} />
         </Route>

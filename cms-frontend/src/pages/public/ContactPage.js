@@ -35,7 +35,7 @@ const ContactPage = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
+    <Container maxWidth={false} sx={{ py: 6, px: 3 }}>
       <Typography variant="h3" component="h1" align="center" gutterBottom>
         Contact Us
       </Typography>
