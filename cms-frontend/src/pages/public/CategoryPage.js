@@ -150,16 +150,13 @@ const CategoryPage = () => {
       </Breadcrumbs>
 
       {/* Category Header */}
-      <Box textAlign="center" sx={{ mb: 6 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {category?.name || slug}
-        </Typography>
-        {category?.description && (
+      {category?.description && (
+        <Box textAlign="center" sx={{ mb: 6 }}>
           <Typography variant="h6" color="text.secondary">
             {category.description}
           </Typography>
-        )}
-      </Box>
+        </Box>
+      )}
 
       <Grid container spacing={4}>
         {/* Left Sidebar - Categories */}
