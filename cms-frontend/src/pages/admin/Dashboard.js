@@ -81,6 +81,7 @@ const Dashboard = () => {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
         },
       });
 
@@ -88,14 +89,32 @@ const Dashboard = () => {
         throw new Error('Failed to create backup');
       }
 
-      // Create blob from response
-      const blob = await response.blob();
+      // Get JSON response with download URL
+      const result = await response.json();
+      
+      if (!result.success || !result.download_url) {
+        throw new Error(result.error || 'Failed to create backup');
+      }
+
+      // Download the backup file using the provided URL
+      const downloadResponse = await fetch(result.download_url, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (!downloadResponse.ok) {
+        throw new Error('Failed to download backup file');
+      }
+
+      // Create blob from the actual backup file
+      const blob = await downloadResponse.blob();
       const url = window.URL.createObjectURL(blob);
       
-      // Create download link
+      // Create download link with the filename from the response
       const link = document.createElement('a');
       link.href = url;
-      link.download = `cms-backup-${new Date().toISOString().split('T')[0]}.zip`;
+      link.download = result.filename || `cms-backup-${new Date().toISOString().split('T')[0]}.zip`;
       document.body.appendChild(link);
       link.click();
       
