@@ -1181,11 +1181,12 @@ def create_backup():
         os.makedirs(backups_dir, exist_ok=True)
         zip_path = os.path.join(backups_dir, zip_filename)
         
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as zipf:
             for root, dirs, files in os.walk(backup_dir):
                 for file in files:
                     file_path = os.path.join(root, file)
-                    arc_path = os.path.relpath(file_path, backup_dir)
+                    # Use forward slashes for archive paths (cross-platform compatibility)
+                    arc_path = os.path.relpath(file_path, backup_dir).replace('\\', '/')
                     zipf.write(file_path, arc_path)
         
         # Cleanup temp directory
@@ -1221,15 +1222,16 @@ def download_backup(filename):
         if not os.path.exists(file_path):
             return jsonify({'error': 'Backup file not found'}), 404
         
+        # Use same pattern as working database download
         return send_file(
             file_path,
             as_attachment=True,
             download_name=filename,
-            mimetype='application/zip'
+            mimetype='application/x-zip-compressed'
         )
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Failed to download backup: {str(e)}'}), 500
 
 @app.route('/api/admin/restore', methods=['POST'])
 @jwt_required()
