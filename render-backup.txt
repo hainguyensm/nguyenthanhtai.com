@@ -1,3 +1,9 @@
  cp ~/project/src/cms-backend/instance/cms.db ~/project/src/cms-backend/static/static/css/cms.db
 cd ~/project/src/cms-backend/uploads && zip -r ~/project/src/cms-backend/static/static/css/uploads.zip images
 https://nguyenthanhtai.com/static/css/uploads.zip
+
+update "Create Backup" to create zip file from 
+  - db file: ~/project/src/cms-backend/instance/cms.db
+  - all files: ~/project/src/cms-backend/uploads/images
+then create zip file (include timesamp in filename) into  ~/project/src/cms-backend/static/static/css
+then return url for download this zip file

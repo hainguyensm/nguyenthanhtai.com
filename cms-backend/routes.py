@@ -1150,79 +1150,57 @@ def create_backup():
             shutil.rmtree(backup_dir)
         os.makedirs(backup_dir)
         
-        # Copy database with corrected production paths
-        def find_database():
-            # Working directory in production is /opt/render/project/src
-            # But the app runs from cms-backend subdirectory
-            possible_db_paths = [
-                # Current working directory paths (should work in production)
-                os.path.join(os.getcwd(), 'instance', 'cms.db'),
-                # Relative to script location 
-                os.path.join(os.path.dirname(__file__), 'instance', 'cms.db'),
-                # Production specific paths
-                '/opt/render/project/src/cms-backend/instance/cms.db',
-                '/opt/render/project/src/instance/cms.db', 
-                # Local development paths
-                os.path.join(os.getcwd(), 'cms-backend', 'instance', 'cms.db'),
-                # Alternative database name
-                os.path.join(os.getcwd(), 'instance', 'blog.db'),
-                '/tmp/cms.db'
-            ]
-            
-            for db_path in possible_db_paths:
-                if os.path.exists(db_path):
-                    return db_path
-            return None
+        # Use specific paths as requested
+        # Database file: ~/project/src/cms-backend/instance/cms.db
+        # Images: ~/project/src/cms-backend/uploads/images
         
-        db_path = find_database()
-        if db_path:
+        # Copy database
+        db_path = os.path.join(os.getcwd(), 'instance', 'cms.db')
+        if os.path.exists(db_path):
             shutil.copy2(db_path, os.path.join(backup_dir, 'cms.db'))
             print(f"Backed up database from: {db_path}")
         else:
-            print("Warning: No database found at any expected location")
-            # Create a note file instead of failing
-            with open(os.path.join(backup_dir, 'database_not_found.txt'), 'w') as f:
-                f.write("Database file not found during backup creation")
-        
-        # Copy uploads directory with corrected production paths
-        def find_uploads():
-            possible_uploads_paths = [
-                # Current working directory paths (should work in production)
-                os.path.join(os.getcwd(), 'uploads'),
-                # Relative to script location
-                os.path.join(os.path.dirname(__file__), 'uploads'),
-                # Production specific paths  
-                '/opt/render/project/src/cms-backend/uploads',
-                '/opt/render/project/src/uploads',
-                # Flask app config
-                app.config.get('UPLOAD_FOLDER', ''),
-                # Local development paths
-                os.path.join(os.getcwd(), 'cms-backend', 'uploads')
+            # Try alternative paths
+            alt_db_paths = [
+                os.path.join(os.path.dirname(__file__), 'instance', 'cms.db'),
+                '/opt/render/project/src/cms-backend/instance/cms.db'
             ]
-            
-            for uploads_path in possible_uploads_paths:
-                if uploads_path and os.path.exists(uploads_path) and os.path.isdir(uploads_path):
-                    return uploads_path
-            return None
+            for alt_path in alt_db_paths:
+                if os.path.exists(alt_path):
+                    shutil.copy2(alt_path, os.path.join(backup_dir, 'cms.db'))
+                    print(f"Backed up database from: {alt_path}")
+                    break
+            else:
+                print("Warning: No database found at expected location")
+                with open(os.path.join(backup_dir, 'database_not_found.txt'), 'w') as f:
+                    f.write("Database file not found during backup creation")
         
-        uploads_path = find_uploads()
-        if uploads_path:
-            shutil.copytree(uploads_path, os.path.join(backup_dir, 'uploads'))
-            print(f"Backed up uploads from: {uploads_path}")
+        # Copy images from uploads/images directory
+        images_path = os.path.join(os.getcwd(), 'uploads', 'images')
+        if not os.path.exists(images_path):
+            # Try alternative paths
+            images_path = os.path.join(os.path.dirname(__file__), 'uploads', 'images')
+            if not os.path.exists(images_path):
+                images_path = '/opt/render/project/src/cms-backend/uploads/images'
+        
+        if os.path.exists(images_path) and os.path.isdir(images_path):
+            dest_images_path = os.path.join(backup_dir, 'uploads', 'images')
+            shutil.copytree(images_path, dest_images_path)
+            print(f"Backed up images from: {images_path}")
         else:
-            print("Warning: No uploads directory found at any expected location")
-            # Create empty uploads directory in backup
-            os.makedirs(os.path.join(backup_dir, 'uploads'), exist_ok=True)
-            with open(os.path.join(backup_dir, 'uploads', 'uploads_not_found.txt'), 'w') as f:
-                f.write("Uploads directory not found during backup creation")
+            print("Warning: No images directory found at expected location")
+            os.makedirs(os.path.join(backup_dir, 'uploads', 'images'), exist_ok=True)
+            with open(os.path.join(backup_dir, 'uploads', 'images', 'images_not_found.txt'), 'w') as f:
+                f.write("Images directory not found during backup creation")
         
-        # Create ZIP file
+        # Create ZIP file with timestamp in static/static/css directory
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         zip_filename = f'cms_backup_{timestamp}.zip'
-        zip_path = os.path.join('backups', zip_filename)
         
-        # Ensure backups directory exists
-        os.makedirs('backups', exist_ok=True)
+        # Save to static/static/css directory as requested
+        static_css_dir = os.path.join(os.getcwd(), 'static', 'static', 'css')
+        os.makedirs(static_css_dir, exist_ok=True)
+        zip_path = os.path.join(static_css_dir, zip_filename)
         
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for root, dirs, files in os.walk(backup_dir):
@@ -1234,8 +1212,16 @@ def create_backup():
         # Cleanup temp directory
         shutil.rmtree(backup_dir)
         
-        # Send the zip file
-        return send_file(zip_path, as_attachment=True, download_name=zip_filename)
+        # Return download URL instead of sending file directly
+        download_url = f'/static/static/css/{zip_filename}'
+        
+        return jsonify({
+            'success': True,
+            'download_url': download_url,
+            'filename': zip_filename,
+            'timestamp': timestamp,
+            'message': f'Backup created successfully'
+        })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
