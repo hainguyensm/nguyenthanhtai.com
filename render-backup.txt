@@ -1,0 +1,3 @@
+ cp ~/project/src/cms-backend/instance/cms.db ~/project/src/cms-backend/static/static/css/cms.db
+cd ~/project/src/cms-backend/uploads && zip -r ~/project/src/cms-backend/static/static/css/uploads.zip images
+https://nguyenthanhtai.com/static/css/uploads.zip
