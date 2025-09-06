@@ -1150,12 +1150,8 @@ def create_backup():
             shutil.rmtree(backup_dir)
         os.makedirs(backup_dir)
         
-        # Use specific paths as requested
-        # Database file: cms-backend/instance/cms.db
-        # Images: cms-backend/uploads/images
-        
-        # Copy database from instance/cms.db (relative to current working directory)
-        db_path = 'instance/cms.db'
+        # Database file path: cms-backend/instance/cms.db
+        db_path = os.path.join(os.path.dirname(__file__), 'instance', 'cms.db')
         if os.path.exists(db_path):
             shutil.copy2(db_path, os.path.join(backup_dir, 'cms.db'))
             print(f"Backed up database from: {db_path}")
@@ -1164,24 +1160,24 @@ def create_backup():
             with open(os.path.join(backup_dir, 'database_not_found.txt'), 'w') as f:
                 f.write(f"Database file not found at {db_path}")
         
-        # Copy all files from uploads/images directory
-        images_path = 'uploads/images'
-        if os.path.exists(images_path) and os.path.isdir(images_path):
-            dest_images_path = os.path.join(backup_dir, 'uploads', 'images')
-            shutil.copytree(images_path, dest_images_path)
-            print(f"Backed up images from: {images_path}")
+        # All files from uploads directory (app.config['UPLOAD_FOLDER'])
+        uploads_path = os.path.join(os.path.dirname(__file__), 'uploads')
+        if os.path.exists(uploads_path) and os.path.isdir(uploads_path):
+            dest_uploads_path = os.path.join(backup_dir, 'uploads')
+            shutil.copytree(uploads_path, dest_uploads_path)
+            print(f"Backed up uploads from: {uploads_path}")
         else:
-            print(f"Warning: No images directory found at {images_path}")
-            os.makedirs(os.path.join(backup_dir, 'uploads', 'images'), exist_ok=True)
-            with open(os.path.join(backup_dir, 'uploads', 'images', 'images_not_found.txt'), 'w') as f:
-                f.write(f"Images directory not found at {images_path}")
+            print(f"Warning: No uploads directory found at {uploads_path}")
+            os.makedirs(os.path.join(backup_dir, 'uploads'), exist_ok=True)
+            with open(os.path.join(backup_dir, 'uploads', 'uploads_not_found.txt'), 'w') as f:
+                f.write(f"Uploads directory not found at {uploads_path}")
         
-        # Create ZIP file with timestamp in static/static/css directory
+        # Create ZIP file with timestamp in cms-backend/static/static/css directory
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         zip_filename = f'cms_backup_{timestamp}.zip'
         
-        # Save to static/static/css directory
-        static_css_dir = 'static/static/css'
+        # Save to cms-backend/static/static/css directory
+        static_css_dir = os.path.join(os.path.dirname(__file__), 'static', 'static', 'css')
         os.makedirs(static_css_dir, exist_ok=True)
         zip_path = os.path.join(static_css_dir, zip_filename)
         
