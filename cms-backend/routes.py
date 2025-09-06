@@ -1151,54 +1151,37 @@ def create_backup():
         os.makedirs(backup_dir)
         
         # Use specific paths as requested
-        # Database file: ~/project/src/cms-backend/instance/cms.db
-        # Images: ~/project/src/cms-backend/uploads/images
+        # Database file: cms-backend/instance/cms.db
+        # Images: cms-backend/uploads/images
         
-        # Copy database
-        db_path = os.path.join(os.getcwd(), 'instance', 'cms.db')
+        # Copy database from instance/cms.db (relative to current working directory)
+        db_path = 'instance/cms.db'
         if os.path.exists(db_path):
             shutil.copy2(db_path, os.path.join(backup_dir, 'cms.db'))
             print(f"Backed up database from: {db_path}")
         else:
-            # Try alternative paths
-            alt_db_paths = [
-                os.path.join(os.path.dirname(__file__), 'instance', 'cms.db'),
-                '/opt/render/project/src/cms-backend/instance/cms.db'
-            ]
-            for alt_path in alt_db_paths:
-                if os.path.exists(alt_path):
-                    shutil.copy2(alt_path, os.path.join(backup_dir, 'cms.db'))
-                    print(f"Backed up database from: {alt_path}")
-                    break
-            else:
-                print("Warning: No database found at expected location")
-                with open(os.path.join(backup_dir, 'database_not_found.txt'), 'w') as f:
-                    f.write("Database file not found during backup creation")
+            print(f"Warning: No database found at {db_path}")
+            with open(os.path.join(backup_dir, 'database_not_found.txt'), 'w') as f:
+                f.write(f"Database file not found at {db_path}")
         
-        # Copy images from uploads/images directory
-        images_path = os.path.join(os.getcwd(), 'uploads', 'images')
-        if not os.path.exists(images_path):
-            # Try alternative paths
-            images_path = os.path.join(os.path.dirname(__file__), 'uploads', 'images')
-            if not os.path.exists(images_path):
-                images_path = '/opt/render/project/src/cms-backend/uploads/images'
-        
+        # Copy all files from uploads/images directory
+        images_path = 'uploads/images'
         if os.path.exists(images_path) and os.path.isdir(images_path):
             dest_images_path = os.path.join(backup_dir, 'uploads', 'images')
             shutil.copytree(images_path, dest_images_path)
             print(f"Backed up images from: {images_path}")
         else:
-            print("Warning: No images directory found at expected location")
+            print(f"Warning: No images directory found at {images_path}")
             os.makedirs(os.path.join(backup_dir, 'uploads', 'images'), exist_ok=True)
             with open(os.path.join(backup_dir, 'uploads', 'images', 'images_not_found.txt'), 'w') as f:
-                f.write("Images directory not found during backup creation")
+                f.write(f"Images directory not found at {images_path}")
         
         # Create ZIP file with timestamp in static/static/css directory
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         zip_filename = f'cms_backup_{timestamp}.zip'
         
-        # Save to static/static/css directory as requested
-        static_css_dir = os.path.join(os.getcwd(), 'static', 'static', 'css')
+        # Save to static/static/css directory
+        static_css_dir = 'static/static/css'
         os.makedirs(static_css_dir, exist_ok=True)
         zip_path = os.path.join(static_css_dir, zip_filename)
         
@@ -1212,7 +1195,7 @@ def create_backup():
         # Cleanup temp directory
         shutil.rmtree(backup_dir)
         
-        # Return download URL instead of sending file directly
+        # Return download URL
         download_url = f'/static/static/css/{zip_filename}'
         
         return jsonify({
@@ -1220,7 +1203,7 @@ def create_backup():
             'download_url': download_url,
             'filename': zip_filename,
             'timestamp': timestamp,
-            'message': f'Backup created successfully'
+            'message': 'Backup created successfully'
         })
         
     except Exception as e:
