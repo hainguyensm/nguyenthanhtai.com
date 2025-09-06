@@ -1172,14 +1172,14 @@ def create_backup():
             with open(os.path.join(backup_dir, 'uploads', 'uploads_not_found.txt'), 'w') as f:
                 f.write(f"Uploads directory not found at {uploads_path}")
         
-        # Create ZIP file with timestamp in cms-backend/static/static/css directory
+        # Create ZIP file with timestamp in cms-backend/backups directory
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         zip_filename = f'cms_backup_{timestamp}.zip'
         
-        # Save to cms-backend/static/static/css directory
-        static_css_dir = os.path.join(os.path.dirname(__file__), 'static', 'static', 'css')
-        os.makedirs(static_css_dir, exist_ok=True)
-        zip_path = os.path.join(static_css_dir, zip_filename)
+        # Save to cms-backend/backups directory  
+        backups_dir = os.path.join(os.path.dirname(__file__), 'backups')
+        os.makedirs(backups_dir, exist_ok=True)
+        zip_path = os.path.join(backups_dir, zip_filename)
         
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for root, dirs, files in os.walk(backup_dir):
@@ -1192,7 +1192,7 @@ def create_backup():
         shutil.rmtree(backup_dir)
         
         # Return download URL
-        download_url = f'/static/static/css/{zip_filename}'
+        download_url = f'/api/admin/download-backup/{zip_filename}'
         
         return jsonify({
             'success': True,
@@ -1201,6 +1201,32 @@ def create_backup():
             'timestamp': timestamp,
             'message': 'Backup created successfully'
         })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/download-backup/<filename>', methods=['GET'])
+@jwt_required()
+@role_required(['admin'])
+def download_backup(filename):
+    """Download backup file"""
+    try:
+        # Security check - only allow zip files with expected naming pattern
+        if not filename.startswith('cms_backup_') or not filename.endswith('.zip'):
+            return jsonify({'error': 'Invalid backup file'}), 400
+        
+        backups_dir = os.path.join(os.path.dirname(__file__), 'backups')
+        file_path = os.path.join(backups_dir, filename)
+        
+        if not os.path.exists(file_path):
+            return jsonify({'error': 'Backup file not found'}), 404
+        
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/zip'
+        )
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
